@@ -228,7 +228,15 @@ def tool_loop(model: str, system: str, user_msg: str,
             fn_args = json.loads(tc["function"]["arguments"] or "{}")
             print(f"  [{turn+1}] tool: {fn_name}({', '.join(f'{k}={repr(v)[:40]}' for k,v in fn_args.items())})")
             fn = tool_map.get(fn_name)
-            result = str(fn(**fn_args)) if fn else f"Unknown tool: {fn_name}"
+            if not fn:
+                result = f"Unknown tool: {fn_name}"
+            else:
+                try:
+                    result = str(fn(**fn_args))
+                except TypeError as e:
+                    result = f"Error: {e}. Check the tool's parameter names."
+                except Exception as e:
+                    result = f"Error: {e}"
             result = result[:_RESULT_CAP]
             ctx_used += len(result)
             messages.append({"role": "tool", "tool_call_id": tc["id"], "content": result})
