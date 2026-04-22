@@ -66,24 +66,87 @@ def tool_search_files(query: str, extension: str = ".php") -> str:
     )
     return result.stdout.strip() or "No matches found"
 
-def tool_read_file(path: str, max_lines: int = 100) -> str:
+def tool_find_file(name: str) -> str:
+    """Find files by name pattern (e.g. 'token_form.php')."""
+    result = subprocess.run(
+        f'find . -type f -name "*{name}*" 2>/dev/null | grep -v ".git" | head -15',
+        shell=True, capture_output=True, text=True,
+    )
+    return result.stdout.strip() or f"No files matching '*{name}*' found"
+
+def _resolve_path(path: str) -> str | None:
+    """Try path as-is, then with public/ prefix."""
     p = _safe_path(path)
     if not p:
-        return "Error: invalid path"
-    if not os.path.isfile(p):
-        return f"Error: '{p}' not found"
-    ext = os.path.splitext(p)[1].lower()
+        return None
+    if os.path.exists(p):
+        return p
+    alt = os.path.normpath(f"public/{path}")
+    if os.path.exists(alt):
+        return alt
+    return None
+
+def tool_read_file(path: str, max_lines: int = 100) -> str:
+    resolved = _resolve_path(path)
+    if not resolved:
+        hint = ""
+        alt = _safe_path(f"public/{path}")
+        if alt and not os.path.exists(alt):
+            hint = f" (also checked public/{path})"
+        return f"Error: '{path}' not found{hint}. Use find_file to locate it."
+    if os.path.isdir(resolved):
+        return f"Error: '{resolved}' is a directory, not a file"
+    ext = os.path.splitext(resolved)[1].lower()
     if ext not in _ALLOWED_EXTS:
         return f"Error: reading {ext} files is not allowed"
-    lines = open(p, encoding="utf-8", errors="replace").readlines()
+    actual = f" (resolved to {resolved})" if resolved != path else ""
+    lines = open(resolved, encoding="utf-8", errors="replace").readlines()
     content = "".join(lines[:max_lines])
     if len(content) > _FILE_CHAR_CAP:
         content = content[:_FILE_CHAR_CAP] + f"\n... (truncated at {_FILE_CHAR_CAP} chars)"
     elif len(lines) > max_lines:
         content += f"\n... ({len(lines) - max_lines} more lines truncated)"
-    return content
+    return f"[Reading: {resolved}]{actual}\n{content}"
 
 CODER_TOOLS = [
+    {
+        "name": "find_file",
+        "description": "Find files by name pattern. Use this FIRST to locate files before reading them.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "File name or partial name, e.g. 'token_form.php'"}
+            },
+            "required": ["name"]
+        },
+        "fn": tool_find_file,
+    },
+    {
+        "name": "read_file",
+        "description": "Read a file (max 100 lines / 2500 chars). Auto-resolves public/ prefix. Read only files you need.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "path":      {"type": "string", "description": "Relative file path (public/ prefix auto-resolved)"},
+                "max_lines": {"type": "integer", "description": "Max lines (default 100, max 100)"},
+            },
+            "required": ["path"]
+        },
+        "fn": tool_read_file,
+    },
+    {
+        "name": "search_files",
+        "description": "Grep file contents for a keyword (max 15 results). For finding files by name, use find_file instead.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query":     {"type": "string", "description": "Text to search for inside files"},
+                "extension": {"type": "string", "description": "File extension (default .php)"},
+            },
+            "required": ["query"]
+        },
+        "fn": tool_search_files,
+    },
     {
         "name": "list_directory",
         "description": "List files in a directory (max depth 2, max 30 results).",
@@ -95,32 +158,6 @@ CODER_TOOLS = [
             "required": []
         },
         "fn": tool_list_directory,
-    },
-    {
-        "name": "search_files",
-        "description": "Grep for files containing a keyword (max 15 results).",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "query":     {"type": "string", "description": "Text to search for"},
-                "extension": {"type": "string", "description": "File extension (default .php)"},
-            },
-            "required": ["query"]
-        },
-        "fn": tool_search_files,
-    },
-    {
-        "name": "read_file",
-        "description": "Read a file (max 100 lines / 2500 chars). Use sparingly — read only the files you need.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "path":      {"type": "string", "description": "Relative file path"},
-                "max_lines": {"type": "integer", "description": "Max lines (default 100, max 100)"},
-            },
-            "required": ["path"]
-        },
-        "fn": tool_read_file,
     },
 ]
 
