@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Job: coder — find relevant files, read them, call model ONCE to generate code."""
-import argparse, os, sys, subprocess, re
+import argparse, os, sys, subprocess, re, time
 from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import *
@@ -15,77 +15,93 @@ skills = load_skills()
 
 # ── Step 1: Extract keywords from issue ───────────────────────────────────────
 def extract_keywords(title: str, body: str) -> list[str]:
-    """Pull meaningful keywords from issue text."""
     text = f"{title} {body}"
-    # Remove markdown, URLs, code fences
     text = re.sub(r'```[\s\S]*?```', '', text)
     text = re.sub(r'`[^`]+`', lambda m: m.group(0).strip('`'), text)
     text = re.sub(r'https?://\S+', '', text)
     text = re.sub(r'[#*>\-|]', ' ', text)
-    words = re.findall(r'[a-zA-Z_][a-zA-Z0-9_]{3,}', text)
-    # Filter out common English words
-    stop = {'this','that','with','from','they','have','been','will','when',
-            'should','would','could','each','also','like','into','than',
-            'only','other','some','such','more','very','just','about',
-            'problem','expected','behaviour','behavior','notes','error',
-            'field','form','value','values','invalid','valid','clear',
-            'show','shown','already','currently','submit','display',
-            'message','entry','entries','range','text','input','data',
-            'admin','creating','editing','accepts','including','obviously'}
+
+    # Also combine adjacent words to catch terms like "ip restriction" → "iprestriction"
+    words = re.findall(r'[a-zA-Z_][a-zA-Z0-9_]{2,}', text)
+
+    stop = {'the','this','that','with','from','they','have','been','will','when',
+            'should','would','could','each','also','like','into','than','any',
+            'only','other','some','such','more','very','just','about','not',
+            'problem','expected','behaviour','behavior','notes','error','can',
+            'field','form','value','values','invalid','valid','clear','for',
+            'show','shown','already','currently','submit','display','and',
+            'message','entry','entries','range','text','input','data','are',
+            'admin','creating','editing','accepts','including','obviously',
+            'hello','world','malformed','notation','obviously','including',
+            'example','please','need','needs','want','make','does','done'}
+
     filtered = []
     seen = set()
     for w in words:
         low = w.lower()
-        if low not in stop and low not in seen and len(low) > 3:
+        if low not in stop and low not in seen and len(low) > 2:
             seen.add(low)
-            filtered.append(w)
-    return filtered[:10]
+            filtered.append(low)
+
+    # Generate compound terms (adjacent pairs without space)
+    for i in range(len(words) - 1):
+        compound = words[i].lower() + words[i+1].lower()
+        if compound not in seen and len(compound) > 5:
+            seen.add(compound)
+            filtered.append(compound)
+
+    return filtered[:15]
 
 
-# ── Step 2: Find relevant files using keywords ──────────────────────────────
+# ── Step 2: Find relevant files ──────────────────────────────────────────────
 def find_relevant_files(keywords: list[str], max_files: int = 5) -> list[str]:
-    """Search repo for files matching keywords."""
     found = set()
-    # Search by filename
-    for kw in keywords[:5]:
+
+    # Search by filename (case-insensitive)
+    for kw in keywords[:8]:
         result = subprocess.run(
-            f'find . -type f -name "*{kw}*" 2>/dev/null | grep -v ".git" | grep -v __pycache__ | head -5',
+            f'find . -type f -iname "*{kw}*" 2>/dev/null | grep -v ".git" | grep -v __pycache__ | grep -v node_modules | head -5',
             shell=True, capture_output=True, text=True,
         )
         for line in result.stdout.strip().split('\n'):
             if line.strip():
                 found.add(line.strip())
 
-    # Search by file content
-    for kw in keywords[:5]:
+    # Search by file content (case-insensitive)
+    for kw in keywords[:8]:
         result = subprocess.run(
-            f'grep -rl "{kw}" --include="*.php" . 2>/dev/null | grep -v ".git" | head -5',
+            f'grep -rli "{kw}" --include="*.php" . 2>/dev/null | grep -v ".git" | head -5',
             shell=True, capture_output=True, text=True,
         )
         for line in result.stdout.strip().split('\n'):
             if line.strip():
                 found.add(line.strip())
 
-    # Score files: more keyword matches = more relevant
+    # Score: more keyword hits in path = more relevant
     scored = []
     for f in found:
-        score = sum(1 for kw in keywords if kw.lower() in f.lower())
-        # Bonus for being a class file or form file
+        flow = f.lower()
+        score = sum(1 for kw in keywords if kw.lower() in flow)
+        # Bonus for likely-important files
         if 'classes/' in f: score += 1
-        if 'form' in f.lower(): score += 1
-        if 'lang/' in f: score += 1
-        # Penalty for test files
-        if 'test' in f.lower(): score -= 2
-        if 'fixture' in f.lower(): score -= 3
+        if 'form' in flow: score += 2
+        if 'lang/' in f and '/en/' in f: score += 2
+        if 'lib.php' in flow: score += 1
+        # Penalty for test/fixture/backup/vendor files
+        if 'test' in flow: score -= 3
+        if 'fixture' in flow: score -= 3
+        if 'backup' in flow: score -= 2
+        if 'vendor/' in flow: score -= 5
+        if 'thirdparty' in flow: score -= 5
         scored.append((score, f))
 
     scored.sort(key=lambda x: -x[0])
-    return [f for _, f in scored[:max_files]]
+    results = [f for _, f in scored[:max_files]]
+    return results
 
 
-# ── Step 3: Read files ───────────────────────────────────────────────────────
+# ── Step 3: Read files with size limit ───────────────────────────────────────
 def read_files(paths: list[str], max_lines: int = 120, max_chars: int = 2500) -> dict[str, str]:
-    """Read files with size caps."""
     contents = {}
     for p in paths:
         if not os.path.isfile(p):
@@ -93,9 +109,23 @@ def read_files(paths: list[str], max_lines: int = 120, max_chars: int = 2500) ->
         lines = open(p, encoding='utf-8', errors='replace').readlines()
         content = ''.join(lines[:max_lines])
         if len(content) > max_chars:
-            content = content[:max_chars] + f'\n... (truncated)'
+            content = content[:max_chars] + '\n... (truncated)'
         contents[p] = content
     return contents
+
+
+# ── Step 4: Call model with retry on rate limit ──────────────────────────────
+def chat_with_retry(model, messages, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return chat(model, messages)
+        except Exception as e:
+            if '429' in str(e) and attempt < max_retries - 1:
+                wait = 30 * (attempt + 1)
+                print(f"[WARN] rate limited, waiting {wait}s (attempt {attempt+1}/{max_retries})")
+                time.sleep(wait)
+            else:
+                raise
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -106,14 +136,13 @@ relevant_files = find_relevant_files(keywords, max_files=4)
 print(f"[Coder round {r}] relevant files: {relevant_files}")
 
 file_contents = read_files(relevant_files[:3])
-print(f"[Coder round {r}] read {len(file_contents)} files")
+print(f"[Coder round {r}] read {len(file_contents)} files: {list(file_contents.keys())}")
 
-# Build context
 file_context = ""
 for path, content in file_contents.items():
     file_context += f"\n--- {path} ---\n{content}\n"
 
-# Handle round 2 (fix findings)
+# Round 2: include previous code + findings
 prev_findings = read_pipeline(f"findings-r{r-1}.json") if r > 1 else None
 prev_code     = read_pipeline(f"code-r{r-1}.json")     if r > 1 else None
 
@@ -148,7 +177,7 @@ Relevant source files from the repository:
 {fix_context}"""
 
 print(f"[Coder round {r}] calling {CODER_MODEL}...")
-raw = chat(CODER_MODEL, [
+raw = chat_with_retry(CODER_MODEL, [
     {"role": "system", "content": system},
     {"role": "user",   "content": user_msg},
 ])
