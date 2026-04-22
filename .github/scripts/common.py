@@ -123,6 +123,16 @@ CODER_TOOLS = [
 ]
 
 
+# ── Repo structure snapshot ───────────────────────────────────────────────────
+def get_repo_context() -> str:
+    """Return top-2-level directory tree so the model knows the layout immediately."""
+    result = subprocess.run(
+        'find . -maxdepth 2 -type d | grep -v ".git" | grep -v "__pycache__" | sort | head -80',
+        shell=True, capture_output=True, text=True,
+    )
+    return result.stdout.strip()
+
+
 # ── Tool-calling loop ─────────────────────────────────────────────────────────
 def tool_loop(model: str, system: str, user_msg: str,
               tools: list, max_turns: int = 12) -> str:
@@ -181,7 +191,19 @@ def tool_loop(model: str, system: str, user_msg: str,
                 "content": result[:5000],  # cap to avoid blowing context
             })
 
-    return messages[-1].get("content") or ""
+    # Max turns hit — force a final text response without tools so we still get output
+    print(f"[WARN] max_turns={max_turns} reached; forcing final response without tools")
+    r = requests.post(
+        ENDPOINT,
+        headers={"Authorization": f"Bearer {GITHUB_TOKEN}",
+                 "Content-Type": "application/json",
+                 "X-GitHub-Api-Version": "2022-11-28"},
+        json={"model": model, "messages": messages, "max_tokens": 8000},
+        timeout=120,
+    )
+    if r.ok:
+        return r.json()["choices"][0]["message"].get("content") or ""
+    return ""
 
 
 # ── Simple (no tools) chat ────────────────────────────────────────────────────

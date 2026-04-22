@@ -44,8 +44,11 @@ if prev_findings and prev_code:
         f"\n\nExplore the repo if needed, then fix ALL findings and return updated files."
     )
 
+repo_context = get_repo_context()
+user_msg = f"Repository top-level structure:\n{repo_context}\n\n---\n{user_msg}"
+
 print(f"[Coder round {r}] calling {CODER_MODEL} with file-reading tools...")
-raw = tool_loop(CODER_MODEL, SYSTEM, user_msg, CODER_TOOLS, max_turns=12)
+raw = tool_loop(CODER_MODEL, SYSTEM, user_msg, CODER_TOOLS, max_turns=20)
 
 code_changes = extract_json(raw)
 if not isinstance(code_changes, list) or not code_changes:
