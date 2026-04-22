@@ -111,7 +111,7 @@ def tool_read_file(path: str, max_lines: int = 100) -> str:
 CODER_TOOLS = [
     {
         "name": "find_file",
-        "description": "Find files by name pattern. Use this FIRST to locate files before reading them.",
+        "description": "Find files by name pattern in the repository.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -331,4 +331,23 @@ def extract_json(text: str):
                 return json.loads(m.group(1))
             except json.JSONDecodeError:
                 continue
+
+    # Try to repair truncated JSON array (model output cut off mid-content)
+    m = re.search(r'(\[\s*\{[\s\S]*)', text)
+    if m:
+        raw = m.group(1)
+        # Try progressively shorter substrings to find valid JSON
+        for end in (raw.rfind('}]'), raw.rfind('}')):
+            if end > 0:
+                candidate = raw[:end+1]
+                if not candidate.rstrip().endswith(']'):
+                    candidate = candidate.rstrip() + ']'
+                try:
+                    result = json.loads(candidate)
+                    if isinstance(result, list) and result:
+                        print("[INFO] repaired truncated JSON array")
+                        return result
+                except json.JSONDecodeError:
+                    continue
+
     return []

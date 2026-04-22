@@ -17,11 +17,10 @@ skills = load_skills()
 def extract_keywords(title: str, body: str) -> list[str]:
     text = f"{title} {body}"
     text = re.sub(r'```[\s\S]*?```', '', text)
-    text = re.sub(r'`[^`]+`', lambda m: m.group(0).strip('`'), text)
+    text = re.sub(r'`([^`]+)`', r'\1', text)
     text = re.sub(r'https?://\S+', '', text)
     text = re.sub(r'[#*>\-|]', ' ', text)
 
-    # Also combine adjacent words to catch terms like "ip restriction" → "iprestriction"
     words = re.findall(r'[a-zA-Z_][a-zA-Z0-9_]{2,}', text)
 
     stop = {'the','this','that','with','from','they','have','been','will','when',
@@ -32,8 +31,13 @@ def extract_keywords(title: str, body: str) -> list[str]:
             'show','shown','already','currently','submit','display','and',
             'message','entry','entries','range','text','input','data','are',
             'admin','creating','editing','accepts','including','obviously',
-            'hello','world','malformed','notation','obviously','including',
-            'example','please','need','needs','want','make','does','done'}
+            'hello','world','malformed','notation','including','still',
+            'example','please','need','needs','want','make','does','done',
+            'file','files','name','names','description','most','clients',
+            'content','using','used','use','before','after','output',
+            'new','all','may','via','steps','step','reproduce','affected',
+            'rendered','written','directly','violation','policy','cleaned',
+            'event','events','raw','open','function','likely','page'}
 
     filtered = []
     seen = set()
@@ -50,6 +54,16 @@ def extract_keywords(title: str, body: str) -> list[str]:
             seen.add(compound)
             filtered.append(compound)
 
+    # Also extract backtick-quoted terms from original text (these are specific filenames/functions)
+    backtick_terms = re.findall(r'`([^`]+)`', f"{title} {body}")
+    for term in backtick_terms:
+        parts = re.findall(r'[a-zA-Z_][a-zA-Z0-9_.]{2,}', term)
+        for p in parts:
+            low = p.lower()
+            if low not in seen and low not in stop:
+                seen.add(low)
+                filtered.insert(0, low)  # prioritize backtick terms
+
     return filtered[:15]
 
 
@@ -57,20 +71,21 @@ def extract_keywords(title: str, body: str) -> list[str]:
 def find_relevant_files(keywords: list[str], max_files: int = 5) -> list[str]:
     found = set()
 
-    # Search by filename (case-insensitive)
-    for kw in keywords[:8]:
+    # Search by filename (case-insensitive, only code files)
+    for kw in keywords[:10]:
         result = subprocess.run(
-            f'find . -type f -iname "*{kw}*" 2>/dev/null | grep -v ".git" | grep -v __pycache__ | grep -v node_modules | head -5',
+            f'find . -type f \\( -iname "*{kw}*.php" -o -iname "*{kw}*.js" -o -iname "*{kw}*.json" \\) 2>/dev/null '
+            f'| grep -v ".git" | grep -v __pycache__ | grep -v node_modules | grep -v vendor | head -8',
             shell=True, capture_output=True, text=True,
         )
         for line in result.stdout.strip().split('\n'):
             if line.strip():
                 found.add(line.strip())
 
-    # Search by file content (case-insensitive)
+    # Search by file content (case-insensitive, PHP only)
     for kw in keywords[:8]:
         result = subprocess.run(
-            f'grep -rli "{kw}" --include="*.php" . 2>/dev/null | grep -v ".git" | head -5',
+            f'grep -rli "{kw}" --include="*.php" . 2>/dev/null | grep -v ".git" | grep -v vendor | head -8',
             shell=True, capture_output=True, text=True,
         )
         for line in result.stdout.strip().split('\n'):
@@ -81,18 +96,30 @@ def find_relevant_files(keywords: list[str], max_files: int = 5) -> list[str]:
     scored = []
     for f in found:
         flow = f.lower()
+        ext = os.path.splitext(f)[1].lower()
+
+        # Skip non-code files
+        if ext in ('.svg', '.png', '.jpg', '.gif', '.ico', '.woff', '.ttf', '.map'):
+            continue
+
         score = sum(1 for kw in keywords if kw.lower() in flow)
+
         # Bonus for likely-important files
+        if ext == '.php': score += 2
         if 'classes/' in f: score += 1
         if 'form' in flow: score += 2
         if 'lang/' in f and '/en/' in f: score += 2
-        if 'lib.php' in flow: score += 1
+        if 'lib.php' in flow: score += 2
+        if 'locallib.php' in flow: score += 1
+
         # Penalty for test/fixture/backup/vendor files
-        if 'test' in flow: score -= 3
-        if 'fixture' in flow: score -= 3
-        if 'backup' in flow: score -= 2
-        if 'vendor/' in flow: score -= 5
-        if 'thirdparty' in flow: score -= 5
+        if '/test/' in flow or '/tests/' in flow: score -= 4
+        if 'fixture' in flow: score -= 4
+        if 'backup/' in flow: score -= 2
+        if 'vendor/' in flow: score -= 6
+        if 'thirdparty' in flow: score -= 6
+        if '/yui/' in flow: score -= 3
+
         scored.append((score, f))
 
     scored.sort(key=lambda x: -x[0])
@@ -101,10 +128,13 @@ def find_relevant_files(keywords: list[str], max_files: int = 5) -> list[str]:
 
 
 # ── Step 3: Read files with size limit ───────────────────────────────────────
-def read_files(paths: list[str], max_lines: int = 120, max_chars: int = 2500) -> dict[str, str]:
+def read_files(paths: list[str], max_lines: int = 150, max_chars: int = 4000) -> dict[str, str]:
     contents = {}
     for p in paths:
         if not os.path.isfile(p):
+            continue
+        ext = os.path.splitext(p)[1].lower()
+        if ext in ('.svg', '.png', '.jpg', '.gif', '.ico'):
             continue
         lines = open(p, encoding='utf-8', errors='replace').readlines()
         content = ''.join(lines[:max_lines])
@@ -118,7 +148,7 @@ def read_files(paths: list[str], max_lines: int = 120, max_chars: int = 2500) ->
 def chat_with_retry(model, messages, max_retries=3):
     for attempt in range(max_retries):
         try:
-            return chat(model, messages)
+            return chat(model, messages, max_tokens=12000)
         except Exception as e:
             if '429' in str(e) and attempt < max_retries - 1:
                 wait = 30 * (attempt + 1)
@@ -132,10 +162,10 @@ def chat_with_retry(model, messages, max_retries=3):
 keywords = extract_keywords(ISSUE_TITLE, ISSUE_BODY)
 print(f"[Coder round {r}] keywords: {keywords}")
 
-relevant_files = find_relevant_files(keywords, max_files=4)
+relevant_files = find_relevant_files(keywords, max_files=5)
 print(f"[Coder round {r}] relevant files: {relevant_files}")
 
-file_contents = read_files(relevant_files[:3])
+file_contents = read_files(relevant_files[:4])
 print(f"[Coder round {r}] read {len(file_contents)} files: {list(file_contents.keys())}")
 
 file_context = ""
@@ -158,14 +188,19 @@ system = f"""You are an expert Moodle PHP developer.
 You will be given an issue description and relevant existing source files.
 Generate the minimal code changes to implement the fix.
 
-Return ONLY a JSON array — nothing else:
-[{{"file": "exact/path/to/file.php", "content": "complete file content"}}]
+IMPORTANT: Return ONLY a valid JSON array — no markdown, no explanation, no prose.
+The JSON must be parseable. Escape all special characters in strings properly.
+
+Format:
+[{{"file": "exact/path/to/file.php", "content": "complete file content with proper escaping"}}]
 
 Rules:
-- Use the EXACT file paths from the provided source files
+- Use the EXACT file paths from the provided source files (keep the ./ prefix if present)
+- If the source file is under ./public/, use the ./public/ prefix in the file path
 - Follow Moodle coding standards (PHP 8.1+)
 - Reuse existing Moodle APIs and patterns from the provided files
-- Max 5 files
+- Keep changes minimal — only modify what's needed for the fix
+- Max 3 files
 {skills}"""
 
 user_msg = f"""Issue: {ISSUE_TITLE}
@@ -182,11 +217,16 @@ raw = chat_with_retry(CODER_MODEL, [
     {"role": "user",   "content": user_msg},
 ])
 
+print(f"[Coder round {r}] response length: {len(raw)} chars")
+
 code_changes = extract_json(raw)
 if not isinstance(code_changes, list) or not code_changes:
-    print(f"[ERROR] no parseable file changes. Raw response:\n{raw[:500]}", file=sys.stderr)
+    print(f"[ERROR] no parseable file changes. Raw response (first 800 chars):\n{raw[:800]}", file=sys.stderr)
+    print(f"[ERROR] Raw response (last 400 chars):\n{raw[-400:]}", file=sys.stderr)
     set_output("has_changes", "false")
     sys.exit(1)
+
+print(f"[Coder round {r}] parsed {len(code_changes)} file changes")
 
 for change in code_changes:
     p = Path(change["file"])
