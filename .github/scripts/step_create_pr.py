@@ -62,7 +62,8 @@ result = subprocess.run(
      "--title", f"feat: #{ISSUE_NUMBER} — {ISSUE_TITLE[:70]}",
      "--body", pr_body,
      "--head", BRANCH,
-     "--base", "main"],
+     "--base", "main",
+     "--draft"],
     capture_output=True, text=True,
     env={**os.environ, "GH_TOKEN": GH_PAT or GITHUB_TOKEN},
 )
