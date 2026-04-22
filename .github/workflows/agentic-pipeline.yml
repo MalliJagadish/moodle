@@ -10,31 +10,127 @@ permissions:
   pull-requests: write
   issues: write
 
+env:
+  ISSUE_NUMBER: ${{ github.event.issue.number }}
+  ISSUE_TITLE:  ${{ github.event.issue.title }}
+  ISSUE_BODY:   ${{ github.event.issue.body }}
+  GITHUB_REPOSITORY: ${{ github.repository }}
+
 jobs:
-  agentic-pipeline:
+
+  # ── 1. Create branch, post start comment ────────────────────────────────────
+  prepare:
+    name: 🚀 Prepare
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: pip install requests
-
-      - name: Run agentic pipeline
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install requests -q
+      - name: Create branch & notify issue
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_PAT: ${{ secrets.GH_PAT }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-          ISSUE_TITLE: ${{ github.event.issue.title }}
-          ISSUE_BODY: ${{ github.event.issue.body }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: python .github/scripts/agentic_pipeline.py
+          GH_PAT:       ${{ secrets.GH_PAT }}
+        run: python .github/scripts/step_prepare.py
+
+  # ── 2. Coder — round 1 ──────────────────────────────────────────────────────
+  round-1-coder:
+    name: 🧑‍💻 Coder (Round 1)
+    needs: prepare
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.coder.outputs.has_changes }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/issue-${{ github.event.issue.number }}
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install requests -q
+      - name: Generate code
+        id: coder
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT:       ${{ secrets.GH_PAT }}
+        run: python .github/scripts/step_coder.py --round 1
+
+  # ── 3. Reviewer — round 1 ───────────────────────────────────────────────────
+  round-1-reviewer:
+    name: 👁️ Reviewer (Round 1)
+    needs: round-1-coder
+    if: needs.round-1-coder.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      has_findings: ${{ steps.reviewer.outputs.has_findings }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/issue-${{ github.event.issue.number }}
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install requests -q
+      - name: Review code
+        id: reviewer
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT:       ${{ secrets.GH_PAT }}
+        run: python .github/scripts/step_reviewer.py --round 1
+
+  # ── 4. Coder — round 2 (only if reviewer found issues) ──────────────────────
+  round-2-coder:
+    name: 🧑‍💻 Coder (Round 2 — fixing findings)
+    needs: round-1-reviewer
+    if: needs.round-1-reviewer.outputs.has_findings == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/issue-${{ github.event.issue.number }}
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install requests -q
+      - name: Fix findings
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT:       ${{ secrets.GH_PAT }}
+        run: python .github/scripts/step_coder.py --round 2
+
+  # ── 5. Reviewer — round 2 ───────────────────────────────────────────────────
+  round-2-reviewer:
+    name: 👁️ Reviewer (Round 2)
+    needs: round-2-coder
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/issue-${{ github.event.issue.number }}
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install requests -q
+      - name: Re-review code
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT:       ${{ secrets.GH_PAT }}
+        run: python .github/scripts/step_reviewer.py --round 2
+
+  # ── 6. Create PR with inline comments ───────────────────────────────────────
+  create-pr:
+    name: 🔀 Create PR
+    needs: [round-1-reviewer, round-2-reviewer]
+    if: |
+      always() &&
+      needs.round-1-reviewer.result == 'success' &&
+      (needs.round-2-reviewer.result == 'success' || needs.round-2-reviewer.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/issue-${{ github.event.issue.number }}
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install requests -q
+      - name: Open PR & post inline comments
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT:       ${{ secrets.GH_PAT }}
+        run: python .github/scripts/step_create_pr.py
