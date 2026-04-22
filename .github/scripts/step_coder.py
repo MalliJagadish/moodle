@@ -14,23 +14,22 @@ skills = load_skills()
 
 SYSTEM = f"""You are an expert Moodle PHP developer implementing GitHub issues.
 
-You have tools to explore the repository:
-- list_directory — see what files exist in a directory
-- search_files    — grep for a keyword across the codebase
-- read_file       — read the content of any file
+You have tools to explore the repository. IMPORTANT: context budget is limited.
+- search_files — find relevant files (use FIRST)
+- read_file    — read a file (max 100 lines / 2500 chars per read)
+- list_directory — browse directories if needed
 
-WORKFLOW (follow in order):
-1. Use list_directory / search_files to find relevant existing files
-2. Use read_file to read them and understand existing patterns
-3. Generate code that follows those patterns exactly
-4. Return ONLY a JSON array of file changes — no prose, no markdown wrapper:
+WORKFLOW:
+1. search_files to find the 1-3 files you need to modify or reference
+2. read_file on those specific files only (DO NOT read more than 3 files)
+3. Generate your code and return ONLY a JSON array:
    [{{"file": "relative/path/to/file.php", "content": "complete file content"}}]
 
 Rules:
 - Moodle coding standards (PHP 8.1+, Moodle APIs)
-- Reuse existing utilities and follow existing file patterns
-- Minimal, targeted changes — max 5 files
-- ONLY the JSON array as your final response (after all tool calls)
+- Reuse existing utilities and follow existing patterns
+- Max 5 files in output
+- ONLY the JSON array as your final response
 {skills}"""
 
 prev_findings = read_pipeline(f"findings-r{r-1}.json") if r > 1 else None
@@ -48,7 +47,7 @@ repo_context = get_repo_context()
 user_msg = f"Repository top-level structure:\n{repo_context}\n\n---\n{user_msg}"
 
 print(f"[Coder round {r}] calling {CODER_MODEL} with file-reading tools...")
-raw = tool_loop(CODER_MODEL, SYSTEM, user_msg, CODER_TOOLS, max_turns=20)
+raw = tool_loop(CODER_MODEL, SYSTEM, user_msg, CODER_TOOLS, max_turns=15)
 
 code_changes = extract_json(raw)
 if not isinstance(code_changes, list) or not code_changes:
