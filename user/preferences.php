@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+use core\output\notification;
+
 defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__.'/../../config.php');
@@ -22,12 +24,11 @@ require_once($CFG->dirroot.'/user/lib.php');
 require_login();
 require_sesskey();
 
-// Example: process preference update
-$preference = required_param('preference', PARAM_TEXT);
-$value = required_param('value', PARAM_RAW);
+$preference = required_param('preference', PARAM_ALPHANUMEXT);
+$value = required_param('value', PARAM_TEXT);
 
 // Save preference for current user.
 set_user_preference($preference, $value, $USER);
 
-// Redirect or return some response.
-echo get_string('preferencessaved', 'core_user');
+$notification = new notification(get_string('preferencessaved', 'core_user'), notification::NOTIFY_SUCCESS);
+echo $OUTPUT->render($notification);
