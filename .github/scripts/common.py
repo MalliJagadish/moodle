@@ -304,6 +304,9 @@ def write_pipeline(filename: str, data):
     open(os.path.join(PIPELINE_DIR, filename), "w").write(json.dumps(data, indent=2))
 
 def commit_and_push(message: str):
+    git("config user.email 'github-actions[bot]@users.noreply.github.com'")
+    git("config user.name 'github-actions[bot]'")
+    run("find . -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null", check=False)
     git("add -A")
     if run("git status --porcelain", check=False):
         git(f'commit -m "{message}"')
