@@ -41,8 +41,9 @@ INFERENCE_HEADERS = {
     "Content-Type": "application/json",
     "X-GitHub-Api-Version": "2022-11-28",
 }
-GITHUB_API_HEADERS = {
-    "Authorization": f"Bearer {GH_PAT}",
+# Issue comments use GITHUB_TOKEN (has issues: write from workflow permissions)
+ISSUE_HEADERS = {
+    "Authorization": f"Bearer {GITHUB_TOKEN}",
     "Accept": "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
 }
@@ -101,7 +102,7 @@ def git(cmd: str, **kw) -> str:
 def post_issue_comment(body: str):
     owner, repo = REPO.split("/", 1)
     url = f"https://api.github.com/repos/{owner}/{repo}/issues/{ISSUE_NUMBER}/comments"
-    r = requests.post(url, headers=GITHUB_API_HEADERS, json={"body": body})
+    r = requests.post(url, headers=ISSUE_HEADERS, json={"body": body})
     if not r.ok:
         print(f"[WARN] Could not post issue comment: {r.status_code} {r.text[:200]}", file=sys.stderr)
 
