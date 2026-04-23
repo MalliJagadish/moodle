@@ -24,6 +24,55 @@ r2_keys = {_key(f) for f in (r2_findings or [])} if r2_findings is not None else
 resolved_findings   = [f for f in r1_findings if r2_findings is not None and _key(f) not in r2_keys]
 unresolved_findings = final_findings
 
+# Load coder dispositions (defend/fix decisions from round 2)
+dispositions = read_pipeline("dispositions.json") or []
+defended_findings = []
+if dispositions and r1_findings:
+    defended_indices = {d["finding_index"] for d in dispositions if d.get("action") == "defend"}
+    for i, f in enumerate(r1_findings):
+        if i in defended_indices:
+            reason = next((d.get("reason", "") for d in dispositions
+                          if d.get("finding_index") == i and d.get("action") == "defend"), "")
+            defended_findings.append({**f, "_defend_reason": reason})
+
+# ── Build Mermaid pipeline graph ──────────────────────────────────────────────
+r1_findings_count = len(r1_findings)
+r2_findings_count = len(r2_findings) if r2_findings is not None else 0
+round2_skipped = r2_code is None
+
+if round2_skipped:
+    mermaid_graph = "\n".join([
+        "```mermaid",
+        "flowchart LR",
+        '    A["🚀 Prepare"] --> B["🧑‍💻 Coder R1"]',
+        '    B --> C["👁️ Reviewer R1<br/>✅ 0 findings"]',
+        '    C -- "No issues found" --> F["🔀 Create PR"]',
+        '    C -. "Skipped" .-> D["🧑‍💻 Coder R2"]',
+        '    D -. "Skipped" .-> E["👁️ Reviewer R2"]',
+        "    style D fill:#f5f5f5,stroke:#ccc,color:#999",
+        "    style E fill:#f5f5f5,stroke:#ccc,color:#999",
+        "    style F fill:#2ea44f,stroke:#22863a,color:#fff",
+        "```",
+    ])
+else:
+    defended_count = len(defended_findings)
+    fixed_count = r1_findings_count - defended_count
+    coder_r2_label = f"🧑‍💻 Coder R2<br/>✅ {fixed_count} fixed"
+    if defended_count > 0:
+        coder_r2_label += f"<br/>🛡️ {defended_count} defended"
+    mermaid_graph = "\n".join([
+        "```mermaid",
+        "flowchart LR",
+        '    A["🚀 Prepare"] --> B["🧑‍💻 Coder R1"]',
+        f'    B --> C["👁️ Reviewer R1<br/>⚠️ {r1_findings_count} findings"]',
+        f'    C -- "{r1_findings_count} issues" --> D["{coder_r2_label}"]',
+        f'    D --> E["👁️ Reviewer R2<br/>{r2_findings_count} remaining"]',
+        '    E --> F["🔀 Create PR"]',
+        "    style C fill:#d29922,stroke:#b08800,color:#fff",
+        "    style F fill:#2ea44f,stroke:#22863a,color:#fff",
+        "```",
+    ])
+
 # ── Build PR body ─────────────────────────────────────────────────────────────
 files_list = "\n".join(f"- `{c['file']}`" for c in final_code)
 
@@ -36,6 +85,17 @@ if unresolved_findings:
 else:
     review_section = "\n### ✅ Reviewer approved — no findings."
 
+# Defended findings section
+if defended_findings:
+    defended_md = "\n".join(
+        f"- **[{f.get('severity','?')}]** `{f.get('file','')}:{f.get('line','')}` — {f.get('issue','')}\n"
+        f"  > **Coder's defense:** {f.get('_defend_reason','No reason given')}"
+        for f in defended_findings
+    )
+    defend_section = f"\n### 🛡️ Defended by coder — needs human verdict\n{defended_md}"
+else:
+    defend_section = ""
+
 pr_body = textwrap.dedent(f"""
     ## 🤖 AI-Generated Implementation
 
@@ -46,10 +106,14 @@ pr_body = textwrap.dedent(f"""
     | Coder | `{CODER_MODEL}` | OpenAI |
     | Reviewer | `{REVIEWER_MODEL}` | Mistral |
 
-    **Rounds:** {rounds_done} &nbsp;|&nbsp; **Files changed:** {len(final_code)} &nbsp;|&nbsp; **Resolved:** {len(resolved_findings)} &nbsp;|&nbsp; **Unresolved:** {len(unresolved_findings)}
+    **Rounds:** {rounds_done} &nbsp;|&nbsp; **Files changed:** {len(final_code)} &nbsp;|&nbsp; **Resolved:** {len(resolved_findings)} &nbsp;|&nbsp; **Defended:** {len(defended_findings)} &nbsp;|&nbsp; **Unresolved:** {len(unresolved_findings)}
+
+    ### Pipeline
+    {mermaid_graph}
 
     ### Files changed
     {files_list}
+    {defend_section}
     {review_section}
 
     ---
@@ -85,6 +149,19 @@ commit_sha = pr_resp.json()["head"]["sha"]
 
 # ── Post inline review comments ───────────────────────────────────────────────
 all_comments = []
+for f in defended_findings:
+    all_comments.append({
+        "path": f.get("file", ""),
+        "line": max(1, int(f.get("line", 1))),
+        "body": (
+            f"**🛡️ DEFENDED [{f.get('severity','?')}]**\n\n"
+            f"**Reviewer issue:** {f.get('issue','')}\n\n"
+            f"**Reviewer suggestion:** {f.get('suggestion','')}\n\n"
+            f"**Coder's defense:** {f.get('_defend_reason','')}\n\n"
+            f"> Human verdict needed."
+        ),
+        "_resolved": False,
+    })
 for f in resolved_findings:
     all_comments.append({
         "path": f.get("file", ""),
@@ -190,5 +267,6 @@ post_issue_comment(
     f"| Rounds | {rounds_done} |\n"
     f"| Files changed | {len(final_code)} |\n"
     f"| Resolved (collapsed) | {len(resolved_findings)} |\n"
+    f"| Defended (needs verdict) | {len(defended_findings)} |\n"
     f"| Unresolved (open) | {len(unresolved_findings)} |\n"
 )

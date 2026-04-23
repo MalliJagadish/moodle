@@ -175,19 +175,40 @@ for path, content in file_contents.items():
 # Load instructions matching the discovered files (Copilot-compatible pattern)
 skills = load_skills(relevant_files)
 
-# Round 2: include previous code + findings
+# Round 2: include previous code + findings + defend option
 prev_findings = read_pipeline(f"findings-r{r-1}.json") if r > 1 else None
 prev_code     = read_pipeline(f"code-r{r-1}.json")     if r > 1 else None
 
 fix_context = ""
+defend_instructions = ""
 if prev_findings and prev_code:
     fix_context = (
         f"\n\n---\nYour previous code:\n{json.dumps(prev_code, indent=2)}"
         f"\n\nReviewer findings to fix:\n{json.dumps(prev_findings, indent=2)}"
-        f"\n\nFix ALL findings and return updated files."
     )
+    defend_instructions = """
 
-system = f"""You are an expert Moodle PHP developer.
+IMPORTANT — You may DEFEND findings you believe are incorrect or unnecessary.
+For each reviewer finding, you must decide: fix it OR defend your original code.
+
+Return TWO JSON keys in your response:
+{
+  "files": [{"file": "path/to/file.php", "content": "complete file content"}],
+  "dispositions": [
+    {"finding_index": 0, "action": "fix", "reason": "Fixed the null check as suggested"},
+    {"finding_index": 1, "action": "defend", "reason": "The existing validation already handles this case via core_user::validate() on line 45"}
+  ]
+}
+
+Rules for defending:
+- Only defend if you are confident your code is correct
+- Provide a clear technical reason referencing specific code/logic
+- Defended findings will be escalated to human review
+- When in doubt, fix rather than defend
+"""
+
+if r == 1:
+    system = f"""You are an expert Moodle PHP developer.
 You will be given an issue description and relevant existing source files.
 Generate the minimal code changes to implement the fix.
 
@@ -204,6 +225,21 @@ Rules:
 - Reuse existing Moodle APIs and patterns from the provided files
 - Keep changes minimal — only modify what's needed for the fix
 - Max 3 files
+{skills}"""
+else:
+    system = f"""You are an expert Moodle PHP developer.
+You previously generated code that was reviewed. Now you must address each finding.
+
+{defend_instructions}
+
+Rules:
+- Use the EXACT file paths from the provided source files (keep the ./ prefix if present)
+- If the source file is under ./public/, use the ./public/ prefix in the file path
+- Follow Moodle coding standards (PHP 8.1+)
+- Reuse existing Moodle APIs and patterns from the provided files
+- Keep changes minimal — only modify what's needed for the fix
+- Max 3 files
+- Return ONLY valid JSON — no markdown, no explanation, no prose
 {skills}"""
 
 user_msg = f"""Issue: {ISSUE_TITLE}
@@ -222,7 +258,22 @@ raw = chat_with_retry(CODER_MODEL, [
 
 print(f"[Coder round {r}] response length: {len(raw)} chars")
 
-code_changes = extract_json(raw)
+# Parse response — Round 2 may return {files, dispositions} or just an array
+code_changes = None
+dispositions = []
+
+if r > 1:
+    parsed = extract_json(raw)
+    if isinstance(parsed, dict) and "files" in parsed:
+        code_changes = parsed["files"]
+        dispositions = parsed.get("dispositions", [])
+    elif isinstance(parsed, list):
+        code_changes = parsed
+    else:
+        code_changes = []
+else:
+    code_changes = extract_json(raw)
+
 if not isinstance(code_changes, list) or not code_changes:
     print(f"[ERROR] no parseable file changes. Raw response (first 800 chars):\n{raw[:800]}", file=sys.stderr)
     print(f"[ERROR] Raw response (last 400 chars):\n{raw[-400:]}", file=sys.stderr)
@@ -230,6 +281,12 @@ if not isinstance(code_changes, list) or not code_changes:
     sys.exit(1)
 
 print(f"[Coder round {r}] parsed {len(code_changes)} file changes")
+
+if dispositions:
+    defended = [d for d in dispositions if d.get("action") == "defend"]
+    fixed = [d for d in dispositions if d.get("action") == "fix"]
+    print(f"[Coder round {r}] dispositions: {len(fixed)} fixed, {len(defended)} defended")
+    write_pipeline("dispositions.json", dispositions)
 
 for change in code_changes:
     p = Path(change["file"])
