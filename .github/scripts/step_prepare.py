@@ -6,6 +6,8 @@ from common import *
 
 git("config user.email 'github-actions[bot]@users.noreply.github.com'")
 git("config user.name 'github-actions[bot]'")
+# Delete remote branch if it exists (re-run on same issue)
+run(f'git push "https://x-access-token:{GH_PAT or GITHUB_TOKEN}@github.com/{REPO}.git" --delete "{BRANCH}" 2>/dev/null || true', check=False)
 git(f"checkout -b {BRANCH}")
 git_push()
 
