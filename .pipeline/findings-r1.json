@@ -1,0 +1,72 @@
+[
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 42,
+    "severity": "HIGH",
+    "issue": "Incorrect PARAM type for username",
+    "suggestion": "Change $mform->setType('username', PARAM_RAW); to $mform->setType('username', PARAM_TEXT);"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 49,
+    "severity": "HIGH",
+    "issue": "Incorrect PARAM type for email",
+    "suggestion": "Change $mform->setType('email', PARAM_RAW_TRIMMED); to $mform->setType('email', PARAM_EMAIL);"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 104,
+    "severity": "HIGH",
+    "issue": "Missing required rule for username",
+    "suggestion": "Add $mform->addRule('username', get_string('required'), 'required');"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 111,
+    "severity": "HIGH",
+    "issue": "Missing required rule for email",
+    "suggestion": "Add $mform->addRule('email', get_string('required'), 'required');"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 122,
+    "severity": "HIGH",
+    "issue": "Missing get_string for 'searchbyusername' header",
+    "suggestion": "Change $mform->addElement('header', 'searchbyusername', get_string('searchbyusername'), ''); to $mform->addElement('header', 'searchbyusername', get_string('searchbyusername'), '');"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 128,
+    "severity": "HIGH",
+    "issue": "Missing get_string for 'username' label",
+    "suggestion": "Change $mform->addElement('text', 'username', get_string('username'), 'size=\"20\"' . $purpose); to $mform->addElement('text', 'username', get_string('username'), 'size=\"20\"' . $purpose);"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 135,
+    "severity": "HIGH",
+    "issue": "Missing get_string for 'searchbyemail' header",
+    "suggestion": "Change $mform->addElement('header', 'searchbyemail', get_string('searchbyemail'), ''); to $mform->addElement('header', 'searchbyemail', get_string('searchbyemail'), '');"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 141,
+    "severity": "HIGH",
+    "issue": "Missing get_string for 'email' label",
+    "suggestion": "Change $mform->addElement('text', 'email', get_string('email'), 'maxlength=\"100\" size=\"30\"' . $purpose); to $mform->addElement('text', 'email', get_string('email'), 'maxlength=\"100\" size=\"30\"' . $purpose);"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 169,
+    "severity": "HIGH",
+    "issue": "Missing get_string for 'search' submit label",
+    "suggestion": "Change $mform->addElement('submit', 'submit', $submitlabel); to $mform->addElement('submit', 'submit', get_string('search'));"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 177,
+    "severity": "HIGH",
+    "issue": "Missing get_string for 'forgotpasswordratelimitexceeded' error message",
+    "suggestion": "Change $errors['username'] = get_string('forgotpasswordratelimitexceeded', 'auth'); to $errors['username'] = get_string('forgotpasswordratelimitexceeded', 'auth');"
+  }
+]
