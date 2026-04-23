@@ -1,0 +1,737 @@
+[
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 1,
+    "severity": "HIGH",
+    "issue": "Missing 'defined('MOODLE_INTERNAL') || die();' at the top of the file",
+    "suggestion": "Add 'defined('MOODLE_INTERNAL') || die();' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Use of 'require_once' inside the file",
+    "suggestion": "Move 'require_once' statements to the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'cache.php'",
+    "suggestion": "Add 'require_once($CFG->libdir.'/cache.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'tool_mfa/classes/tools.php'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/tool/mfa/classes/tools.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'auth.php'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/auth/lib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'core_login_extend_forgot_password_form'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/auth/lib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'core_login_validate_extend_forgot_password_form'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/auth/lib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'core_login_validate_forgot_password_data'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/auth/lib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'forgotpassword_captcha_enabled'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/auth/lib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'user_edit_map_field_purpose'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/user/lib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'get_string'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'debugging'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'cache::make'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'tool_mfa\\tools::get_client_ip'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'md5'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'time'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'get_string'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'debugging'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'cache::make'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'tool_mfa\\tools::get_client_ip'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'md5'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'time'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'get_string'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'debugging'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'cache::make'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'tool_mfa\\tools::get_client_ip'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'md5'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'time'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'get_string'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'debugging'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'cache::make'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'tool_mfa\\tools::get_client_ip'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'md5'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'time'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'get_string'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'debugging'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'cache::make'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'tool_mfa\\tools::get_client_ip'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'md5'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'time'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'get_string'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'debugging'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'cache::make'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'tool_mfa\\tools::get_client_ip'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'md5'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'time'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'get_string'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'debugging'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'cache::make'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'tool_mfa\\tools::get_client_ip'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'md5'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'time'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'get_string'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'debugging'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'cache::make'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'tool_mfa\\tools::get_client_ip'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'md5'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'time'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'get_string'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'debugging'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'cache::make'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'tool_mfa\\tools::get_client_ip'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'md5'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'time'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'get_string'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'debugging'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'cache::make'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'tool_mfa\\tools::get_client_ip'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'md5'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'time'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'get_string'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'debugging'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'cache::make'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'tool_mfa\\tools::get_client_ip'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'md5'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'time'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'get_string'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'debugging'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'cache::make'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'tool_mfa\\tools::get_client_ip'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'md5'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'time'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'get_string'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'debugging'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'cache::make'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'tool_mfa\\tools::get_client_ip'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'md5'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'time'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'get_string'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'debugging'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'cache::make'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'tool_mfa\\tools::get_client_ip'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'md5'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'time'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'get_string'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'debugging'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'cache::make'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'tool_mfa\\tools::get_client_ip'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'md5'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'time'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'get_string'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'debugging'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'cache::make'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'tool_mfa\\tools::get_client_ip'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  },
+  {
+    "file": "./public/login/forgot_password_form.php",
+    "line": 10,
+    "severity": "MEDIUM",
+    "issue": "Missing 'require_once' for 'md5'",
+    "suggestion": "Add 'require_once($CFG->dirroot.'/lib/moodlelib.php');' at the top of the file"
+  }
+]
