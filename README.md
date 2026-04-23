@@ -226,9 +226,6 @@ No manual setup is needed beyond the repository secrets:
 ![Platform](https://img.shields.io/badge/Platform-GitHub_Actions-24292f?style=for-the-badge&logo=github-actions&logoColor=white)
 ![LLM](https://img.shields.io/badge/LLM-GPT--4.1_%7C_Claude_%7C_Mistral-0078d4?style=for-the-badge)
 
-> [!IMPORTANT]
-> Every component below has been **individually verified** as technically feasible using GitHub Actions and publicly available tooling. This is a concrete implementation path — not a wishlist.
-
 ---
 
 ### 🌐 Vision
