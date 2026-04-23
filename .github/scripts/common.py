@@ -311,10 +311,11 @@ def tool_loop(model: str, system: str, user_msg: str,
 
 
 # ── Simple (no tools) chat ───────────────────────────────────────────────────
-def chat(model: str, messages: list, max_tokens: int = 8000) -> str:
-    r = requests.post(ENDPOINT, headers=_API_HEADERS,
-                      json={"model": model, "messages": messages, "max_tokens": max_tokens},
-                      timeout=120)
+def chat(model: str, messages: list, max_tokens: int = 8000, response_format: dict | None = None) -> str:
+    payload = {"model": model, "messages": messages, "max_tokens": max_tokens}
+    if response_format:
+        payload["response_format"] = response_format
+    r = requests.post(ENDPOINT, headers=_API_HEADERS, json=payload, timeout=120)
     if not r.ok:
         print(f"[ERROR] {model} {r.status_code}: {r.text[:400]}", file=sys.stderr)
         r.raise_for_status()
