@@ -145,10 +145,10 @@ def read_files(paths: list[str], max_lines: int = 150, max_chars: int = 4000) ->
 
 
 # ── Step 4: Call model with retry on rate limit ──────────────────────────────
-def chat_with_retry(model, messages, max_retries=3):
+def chat_with_retry(model, messages, max_retries=3, response_format=None):
     for attempt in range(max_retries):
         try:
-            return chat(model, messages, max_tokens=12000)
+            return chat(model, messages, max_tokens=12000, response_format=response_format)
         except Exception as e:
             if '429' in str(e) and attempt < max_retries - 1:
                 wait = 30 * (attempt + 1)
@@ -212,11 +212,10 @@ if r == 1:
 You will be given an issue description and relevant existing source files.
 Generate the minimal code changes to implement the fix.
 
-IMPORTANT: Return ONLY a valid JSON array — no markdown, no explanation, no prose.
-The JSON must be parseable. Escape all special characters in strings properly.
+IMPORTANT: Return ONLY a valid JSON object — no markdown, no explanation, no prose.
 
 Format:
-[{{"file": "exact/path/to/file.php", "content": "complete file content with proper escaping"}}]
+{{"files": [{{"file": "exact/path/to/file.php", "content": "complete file content"}}]}}
 
 Rules:
 - Use the EXACT file paths from the provided source files (keep the ./ prefix if present)
@@ -239,7 +238,7 @@ Rules:
 - Reuse existing Moodle APIs and patterns from the provided files
 - Keep changes minimal — only modify what's needed for the fix
 - Max 3 files
-- Return ONLY valid JSON — no markdown, no explanation, no prose
+- Return ONLY a valid JSON object — no markdown, no explanation, no prose
 {skills}"""
 
 user_msg = f"""Issue: {ISSUE_TITLE}
@@ -254,7 +253,7 @@ print(f"[Coder round {r}] calling {CODER_MODEL}...")
 raw = chat_with_retry(CODER_MODEL, [
     {"role": "system", "content": system},
     {"role": "user",   "content": user_msg},
-])
+], response_format={"type": "json_object"})
 
 print(f"[Coder round {r}] response length: {len(raw)} chars")
 
@@ -272,7 +271,13 @@ if r > 1:
     else:
         code_changes = []
 else:
-    code_changes = extract_json(raw)
+    parsed = extract_json(raw)
+    if isinstance(parsed, dict) and "files" in parsed:
+        code_changes = parsed["files"]
+    elif isinstance(parsed, list):
+        code_changes = parsed
+    else:
+        code_changes = []
 
 if not isinstance(code_changes, list) or not code_changes:
     print(f"[ERROR] no parseable file changes. Raw response (first 800 chars):\n{raw[:800]}", file=sys.stderr)
