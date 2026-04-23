@@ -16,7 +16,7 @@
   - [AI Skills / Instructions](#ai-skills--instructions)
 - [How to Trigger](#how-to-trigger)
 - [Limitations & Known Issues](#limitations--known-issues)
-- [Future Plans: Production-Grade Pipeline](#future-plans-production-grade-pipeline)
+- [🚀 Future Plans: Production-Grade Pipeline](#-future-plans-production-grade-pipeline)
 
 ---
 
@@ -219,185 +219,200 @@ No manual setup is needed beyond the repository secrets:
 
 ---
 
-### Future Plans: Production-Grade Pipeline
+## 🚀 Future Plans: Production-Grade Pipeline
 
-> This section describes the **target production architecture** — what the pipeline would look like if taken beyond POC. All approaches below have been verified as technically feasible with GitHub Actions and publicly available tooling.
+![Roadmap](https://img.shields.io/badge/Status-Roadmap-6f42c1?style=for-the-badge)
+![Feasibility](https://img.shields.io/badge/Feasibility-Verified-2ea44f?style=for-the-badge)
+![Platform](https://img.shields.io/badge/Platform-GitHub_Actions-24292f?style=for-the-badge&logo=github-actions&logoColor=white)
+![LLM](https://img.shields.io/badge/LLM-GPT--4.1_%7C_Claude_%7C_Mistral-0078d4?style=for-the-badge)
+
+> [!IMPORTANT]
+> Every component below has been **individually verified** as technically feasible using GitHub Actions and publicly available tooling. This is a concrete implementation path — not a wishlist.
 
 ---
 
-#### Vision
+### 🌐 Vision
 
-Move from a manually triggered, single-repository toy to a fully autonomous pipeline where issues raised in **any external tool** (Sentry, Elastic APM, Jira, Linear, PagerDuty, or any webhook source) flow through a structured agent chain that plans, codes, tests, scans, reviews, and opens a draft PR — all without human involvement until the final review gate.
+> [!NOTE]
+> Today the pipeline reacts to a **GitHub Issue** and handles small bug fixes.
+> The production goal is a **fully autonomous agent chain** where issues raised in *any* external system — Sentry, Elastic APM, Jira, Linear, PagerDuty — automatically flow through planning → coding → testing → security scanning → multi-round review, and land as a **draft PR ready for human sign-off**.
+> No human involvement until the final review gate.
 
 ---
 
-#### Full Production Pipeline Flow
+### 🏗️ Production Pipeline Architecture
 
 ```
-  External Source                GitHub Actions
-  ─────────────                  ──────────────────────────────────────────────────
-                                                                                    
-  Sentry alert  ──┐              ┌──────────────────────────────────────────────┐  
-  Elastic log   ──┤  webhook /   │  1. Triage Agent                             │  
-  Jira ticket   ──┤  repository_ │     Classify severity, deduplicate,          │  
-  Linear issue  ──┤  dispatch    │     enrich with stack trace / log context     │  
-  GitHub Issue  ──┘              │     Output: triage.json                       │  
-                                 └────────────────────┬─────────────────────────┘  
-                                                      │ actionable = true           
-                                 ┌────────────────────▼─────────────────────────┐  
-                                 │  2. Planning Agent                            │  
-                                 │     Read codebase (tool_loop, no file limit)  │  
-                                 │     Design implementation plan                │  
-                                 │     Identify files, tests, migration needs    │  
-                                 │     Output: plan.json                         │  
-                                 └────────────────────┬─────────────────────────┘  
-                                                      │                             
-                                 ┌────────────────────▼─────────────────────────┐  
-                                 │  3. Coder Agent                               │  
-                                 │     Follow plan, generate code + unit tests   │  
-                                 │     PHP, JS/TS, DB migrations                 │  
-                                 │     Output: code.json                         │  
-                                 └────────────────────┬─────────────────────────┘  
-                                                      │                             
-                                 ┌────────────────────▼─────────────────────────┐  
-                                 │  4a. Test Runner (PHPUnit + Behat)            │  
-                                 │  4b. Security Scanner (Semgrep / CodeQL)      │  
-                                 │      ← run in parallel →                      │  
-                                 │  Output: test-results.json, sarif.json        │  
-                                 └──────────┬──────────────────┬─────────────────┘  
-                                            │ failures exist   │ all pass            
-                                 ┌──────────▼──────────┐       │                    
-                                 │  5. Fix Agent        │       │                    
-                                 │  (up to 2 retries)   │       │                    
-                                 │  Re-runs 4a + 4b     │       │                    
-                                 └──────────┬───────────┘       │                    
-                                            └─────────┬─────────┘                   
-                                                      │                             
-                                 ┌────────────────────▼─────────────────────────┐  
-                                 │  6. Review Round 1                            │  
-                                 │     Code quality + spec compliance            │  
-                                 │     Informed by test + security results       │  
-                                 └────────────────────┬─────────────────────────┘  
-                                                      │ findings                    
-                                 ┌────────────────────▼─────────────────────────┐  
-                                 │  7. Coder Fix Round (Fix or Defend)           │  
-                                 └────────────────────┬─────────────────────────┘  
-                                                      │                             
-                                 ┌────────────────────▼─────────────────────────┐  
-                                 │  8. Review Round 2 (+ optional Round 3)       │  
-                                 └────────────────────┬─────────────────────────┘  
-                                                      │                             
-                                 ┌────────────────────▼─────────────────────────┐  
-                                 │  9. Open Draft PR                             │  
-                                 │     Inline comments: resolved / unresolved    │  
-                                 │     Test summary, security findings attached  │  
-                                 │     Notify via Slack / Teams                  │  
-                                 └────────────────────┬─────────────────────────┘  
-                                                      │                             
-                                 ┌────────────────────▼─────────────────────────┐  
-                                 │  Human Review                                 │  
-                                 │  Approve / Request changes / Close            │  
-                                 └──────────────────────────────────────────────┘  
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                     PRODUCTION AGENTIC PIPELINE                            ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  EXTERNAL SOURCES          GITHUB ACTIONS JOBS                              ║
+║  ─────────────────         ────────────────────────────────────────────     ║
+║                                                                              ║
+║  🔴 Sentry Alert  ──┐      ┌─────────────────────────────────────────┐     ║
+║  📊 Elastic APM   ──┤ repo │  1. 🔍 TRIAGE AGENT                     │     ║
+║  📋 Jira Ticket   ──┤ disp │     Classify · Deduplicate · Enrich     │     ║
+║  📌 Linear Issue  ──┤ atch │     Output → triage.json                │     ║
+║  🔔 PagerDuty     ──┤      └─────────────────┬───────────────────────┘     ║
+║  📝 GitHub Issue  ──┘                        │ actionable = true            ║
+║                                              │                              ║
+║                            ┌─────────────────▼───────────────────────┐     ║
+║                            │  2. 🧠 PLANNING AGENT                   │     ║
+║                            │     Read full codebase (tool_loop)      │     ║
+║                            │     Design implementation plan          │     ║
+║                            │     Output → plan.json                  │     ║
+║                            └─────────────────┬───────────────────────┘     ║
+║                                              │                              ║
+║                            ┌─────────────────▼───────────────────────┐     ║
+║                            │  3. 💻 CODER AGENT                      │     ║
+║                            │     Follow plan · PHP + JS/TS           │     ║
+║                            │     Generate code + unit tests          │     ║
+║                            │     Output → code.json                  │     ║
+║                            └─────────────────┬───────────────────────┘     ║
+║                                              │                              ║
+║                            ┌─────────────────▼───────────────────────┐     ║
+║                            │  4a. 🧪 TEST RUNNER    4b. 🔒 SECURITY  │     ║
+║                            │      PHPUnit + Behat       Semgrep      │     ║
+║                            │      ← run in parallel →   CodeQL       │     ║
+║                            │      test-results.json     Snyk         │     ║
+║                            │                         sarif.json      │     ║
+║                            └──────────┬──────────────────┬───────────┘     ║
+║                                       │ failures         │ all pass         ║
+║                            ┌──────────▼──────────┐       │                 ║
+║                            │  5. 🔧 FIX AGENT     │       │                 ║
+║                            │     Up to 2 retries  │       │                 ║
+║                            │     Re-run 4a + 4b   │       │                 ║
+║                            └──────────┬───────────┘       │                 ║
+║                                       └──────────┬────────┘                 ║
+║                                                  │                          ║
+║                            ┌─────────────────────▼───────────────────┐     ║
+║                            │  6. 🔎 REVIEW ROUND 1                   │     ║
+║                            │     Code quality · Spec compliance      │     ║
+║                            │     Aware of test + security results    │     ║
+║                            └─────────────────┬───────────────────────┘     ║
+║                                              │ findings                     ║
+║                            ┌─────────────────▼───────────────────────┐     ║
+║                            │  7. 💻 CODER — Fix or Defend             │     ║
+║                            └─────────────────┬───────────────────────┘     ║
+║                                              │                              ║
+║                            ┌─────────────────▼───────────────────────┐     ║
+║                            │  8. 🔎 REVIEW ROUND 2 (+ Round 3)       │     ║
+║                            │     Escalate unresolved HIGH findings   │     ║
+║                            └─────────────────┬───────────────────────┘     ║
+║                                              │                              ║
+║                            ┌─────────────────▼───────────────────────┐     ║
+║                            │  9. 📬 DRAFT PR                         │     ║
+║                            │     Inline comments: resolved/open      │     ║
+║                            │     Test + security summary attached    │     ║
+║                            │     Slack / Teams notification sent     │     ║
+║                            └─────────────────┬───────────────────────┘     ║
+║                                              │                              ║
+║                            ┌─────────────────▼───────────────────────┐     ║
+║                            │  👤 HUMAN REVIEW GATE                   │     ║
+║                            │     Approve · Request changes · Close   │     ║
+║                            └─────────────────────────────────────────┘     ║
+╚══════════════════════════════════════════════════════════════════════════════╝
 ```
 
 ---
 
-#### 1. External Issue Manager Integration
+### 🔌 1. External Issue Manager Integration
 
-Any alerting or project management tool can feed into the pipeline via **GitHub's `repository_dispatch` API** — no polling required.
+> [!TIP]
+> Any alerting or project management tool can feed into the pipeline via GitHub's `repository_dispatch` API — **no polling, no custom webhook servers**. One webhook URL handles everything.
 
-| Source | Integration Method |
-|--------|-------------------|
-| Sentry | Sentry Webhook → GitHub `repository_dispatch` (event type: `sentry-alert`) |
-| Elastic APM | Elastic Watcher alert → HTTP webhook → `repository_dispatch` |
-| Jira | Jira Automation rule → webhook → `repository_dispatch` |
-| Linear | Linear webhook → `repository_dispatch` |
-| PagerDuty | PagerDuty webhook → `repository_dispatch` |
-| GitHub Issue | `issues: [opened, reopened]` trigger (already implemented) |
+| Source | Method | Trigger Event |
+|--------|--------|---------------|
+| 🔴 **Sentry** | Sentry Webhook Platform → `repository_dispatch` | `sentry-alert` |
+| 📊 **Elastic APM** | Elastic Watcher → HTTP action → `repository_dispatch` | `elastic-alert` |
+| 📋 **Jira** | Jira Automation rule → webhook | `jira-ticket` |
+| 📌 **Linear** | Linear webhook integration | `linear-issue` |
+| 🔔 **PagerDuty** | PagerDuty webhook V3 | `pagerduty-incident` |
+| 📝 **GitHub Issue** | `issues: [opened, reopened]` (already live) | native |
 
-**Example `repository_dispatch` payload from Sentry:**
+**Example — Sentry alert payload:**
 
 ```json
 {
   "event_type": "sentry-alert",
   "client_payload": {
-    "issue_url": "https://sentry.io/issues/12345/",
     "title": "TypeError: Cannot read property 'id' of undefined",
-    "stack_trace": "...",
     "affected_file": "mod/assign/submission/file/lib.php",
-    "severity": "HIGH"
+    "stack_trace": "...",
+    "severity": "HIGH",
+    "sentry_url": "https://sentry.io/issues/12345/"
   }
 }
 ```
 
-The **Triage Agent** (Job 1) reads `client_payload` from `github.event.client_payload` and decides whether the issue is actionable, a duplicate, or out of scope before any code generation begins.
+The **Triage Agent** reads `github.event.client_payload` and decides: actionable, duplicate, or out of scope — before any code generation begins.
 
 ---
 
-#### 2. Planning Agent
+### 🧠 2. Planning Agent
 
-The POC coder jumps straight from issue text to code. Production needs a **Planning Agent** that reads the codebase first and produces a structured implementation plan.
+> [!TIP]
+> The POC coder jumps straight from issue text to code. Production needs a dedicated **Planning Agent** that reads the codebase first and produces a structured implementation plan before a single line of code is written.
 
-- Uses `tool_loop()` (already scaffolded in `common.py`) with no hard file limit
-- Tools: `find_file`, `read_file`, `search_files`, `list_directory`, `grep_codebase`
-- Outputs `plan.json`:
-  ```json
-  {
-    "summary": "Add missing null check before accessing submission->id",
-    "files_to_modify": ["mod/assign/submission/file/lib.php"],
-    "files_to_create": [],
-    "db_migration_needed": false,
-    "new_tests": ["mod/assign/tests/submission_file_test.php"],
-    "risks": ["Affects all submission types — regression risk in assign module"]
-  }
-  ```
-- Coder (Job 3) follows `plan.json` instead of deriving its own approach from scratch
+- Uses `tool_loop()` — **already scaffolded in `common.py`**, currently unused
+- No hard file limit — agent explores until it has enough context
+- Outputs `plan.json` which the Coder follows instead of improvising:
+
+```json
+{
+  "summary": "Add null check before accessing submission->id",
+  "files_to_modify": ["mod/assign/submission/file/lib.php"],
+  "new_tests": ["mod/assign/tests/submission_file_test.php"],
+  "db_migration_needed": false,
+  "risks": ["Affects all submission types — regression risk in assign module"]
+}
+```
 
 ---
 
-#### 3. Real Test Execution
+### 🧪 3. Real Test Execution
 
-The POC generates test code but never runs it. Production runs tests inside GitHub Actions and feeds results back to the agents.
+> [!TIP]
+> The POC generates test code but never runs it. Production executes tests inside GitHub Actions and feeds **ground-truth results** back to the agents — not just code analysis.
 
-**PHPUnit:**
+**PHPUnit** runs inside the Actions runner and results are committed to `.pipeline/`:
+
 ```yaml
 - name: Run PHPUnit
   run: |
-    cd /var/www/html
-    php admin/tool/phpunit/cli/init.php
     vendor/bin/phpunit --testsuite mod_assign \
       --log-junit .pipeline/phpunit-results.xml
 ```
 
-**Behat (integration):**
+**Behat** for integration-level coverage:
+
 ```yaml
 - name: Run Behat
   run: |
-    php admin/tool/behat/cli/init.php
     vendor/bin/behat --tags=@mod_assign \
       --format=json --out=.pipeline/behat-results.json
 ```
 
-Results are committed to `.pipeline/` and passed to the Fix Agent and Reviewer so they have **ground-truth evidence** of failures, not just code analysis.
+Results flow into the **Fix Agent** and **Reviewer** — both see actual failure messages, not inferred ones.
 
 ---
 
-#### 4. Security Scanning
+### 🔒 4. Security Scanning
 
-Three complementary SAST tools run in parallel with tests, all outputting SARIF that GitHub renders as inline PR code annotations:
+> [!WARNING]
+> The POC has **zero security scanning**. Production runs three complementary tools in parallel — all outputting SARIF that GitHub renders as native inline PR code annotations.
 
-| Tool | What It Catches | GitHub Integration |
-|------|-----------------|--------------------|
-| **Semgrep** | PHP injection, XSS, insecure function calls, Moodle-specific rules | `github/codeql-action/upload-sarif` |
-| **CodeQL** | Deep data-flow analysis, taint tracking | Native GitHub Advanced Security |
-| **Snyk** | Composer dependency CVEs | `snyk/actions/php` |
+| Tool | What It Catches | Cost |
+|------|-----------------|------|
+| ![Semgrep](https://img.shields.io/badge/Semgrep-SAST-blue?style=flat-square) | PHP injection, XSS, insecure functions, Moodle-specific rules | Free tier available |
+| ![CodeQL](https://img.shields.io/badge/CodeQL-Data--flow-24292f?style=flat-square&logo=github) | Deep taint tracking, data-flow analysis | Free for public repos |
+| ![Snyk](https://img.shields.io/badge/Snyk-Dependencies-4c5fd5?style=flat-square) | Composer CVEs, known vulnerable packages | Free tier available |
 
 ```yaml
 - uses: returntocorp/semgrep-action@v1
   with:
-    config: >-
-      p/php
-      p/owasp-top-ten
+    config: "p/php p/owasp-top-ten"
     sarif_file: .pipeline/semgrep.sarif
 
 - uses: github/codeql-action/upload-sarif@v3
@@ -405,123 +420,118 @@ Three complementary SAST tools run in parallel with tests, all outputting SARIF 
     sarif_file: .pipeline/semgrep.sarif
 ```
 
-The SARIF findings are also parsed into `.pipeline/security.json` and injected into the Reviewer's system prompt so review comments reference actual security violations by file and line.
+Security findings are also parsed into `.pipeline/security.json` and injected into the Reviewer's system prompt — so review comments cite actual violations by file and line number.
 
 ---
 
-#### 5. Multi-Round Review (up to 3 rounds)
+### 🔄 5. Multi-Round Review (up to 3 rounds)
 
-The POC is capped at 2 rounds because GitHub Actions has no dynamic loops — each round is a separate job defined statically in YAML.
-
-**Production approach:** Add a third static round, and have the final reviewer apply a **pass/escalate** gate:
+> [!NOTE]
+> GitHub Actions has no dynamic loops — rounds are static jobs. Production adds a third round with an escalation gate for findings that survive all rounds.
 
 ```
-Round 1 → Round 2 → Round 3 (if HIGH severity remains) → Escalate to human
+Round 1 ──► Round 2 ──► Round 3 (only if HIGH severity remains) ──► Escalate
 ```
 
-Each review round has full context:
+Each round has **full context**:
 - Code diff from the current round
-- Test results (`phpunit-results.xml`, `behat-results.json`)
+- PHPUnit + Behat results
 - Security findings (`security.json`)
-- Dispositions from previous rounds (fix / defend decisions)
+- Fix/Defend dispositions from all prior rounds
 
-A finding that is defended twice (Round 1 → Round 2 → Round 3 still present) is automatically marked `ESCALATED` and appears in the PR as an unresolved inline comment requiring human sign-off.
-
----
-
-#### 6. Draft PR with Inline Comments
-
-The POC already opens a PR with inline comments. Production extends this:
-
-- PR is opened as **Draft** — signals it is not ready to merge until human approves
-- **Resolved comments** — findings the coder fixed; shown as resolved threads
-- **Unresolved comments** — defended or escalated findings; shown as open threads with the coder's defense reasoning attached
-- **PR description** includes:
-  - Test execution summary (passed / failed / skipped counts)
-  - Security scan summary (HIGH/MEDIUM/LOW finding counts with links)
-  - Triage context (original Sentry/Jira source, severity, affected users)
-  - Agent confidence score
+A finding defended across all three rounds is automatically marked `ESCALATED` and appears in the PR as a permanently open inline comment requiring human sign-off.
 
 ---
 
-#### 7. Production-Readiness Checklist
+### 📬 6. Draft PR with Inline Comments
 
-Beyond the pipeline logic, these elements are required before going to production:
+> [!NOTE]
+> The POC already opens a PR with inline comments. Production extends every dimension of it.
 
-| Area | What to Add |
-|------|-------------|
-| **Observability** | Structured JSON logs from each agent script, shipped to Elastic/Datadog. Track token usage, latency, pass/fail per round per issue. |
-| **Cost controls** | Hard token budget per pipeline run. Abort and notify if exceeded. Use cheaper models (GPT-4.1-nano, Mistral Small) for triage/planning; reserve GPT-4.1 for coder rounds only. |
-| **Idempotency** | Check if a branch `agent/issue-{N}` already exists before creating. Re-use it if the issue is re-opened. Deduplicate Sentry alerts by fingerprint before triggering. |
-| **Retry on failure** | Wrap each agent job with a retry step (`max-retries: 2`) for transient API errors. Commit partial state so retries don't repeat completed work. |
-| **Human escalation path** | If the pipeline exits with unresolved HIGH findings after all rounds, auto-assign the PR to a lead reviewer and post a Slack/Teams alert. |
-| **Notifications** | Post pipeline start/end/failure to a dedicated Slack or Teams channel via webhook. Include issue title, PR link, and a short agent summary. |
-| **Secrets management** | Store LLM API keys in GitHub Secrets (or Azure Key Vault for enterprise). Rotate `GH_PAT` regularly. Never log secrets in agent output. |
-| **Branch hygiene** | Delete `agent/issue-{N}` branches automatically if the PR is closed without merging. Enforce naming convention via branch protection rules. |
-| **Rollback** | Tag the commit before applying agent changes. If PHPUnit regression rate exceeds threshold, auto-close the PR and post a failure summary. |
-| **Concurrency** | Use `concurrency: group: issue-${{ github.event.issue.number }}` in the workflow to prevent two pipeline runs for the same issue from racing. |
-| **Scope guardrails** | Triage agent should reject issues that touch >N files or require schema changes beyond a configurable complexity threshold — route those to human planning first. |
+| Feature | POC | Production |
+|---------|-----|-----------|
+| PR state | Regular PR | **Draft** — not mergeable until human approves |
+| Fixed findings | Posted as comments | **Resolved threads** — collapsed, still visible |
+| Defended findings | Posted as comments | **Open threads** — with coder's defense reasoning |
+| PR description | Basic summary | Test summary + security counts + source context |
+| Notification | None | **Slack / Teams** on open, escalation, and failure |
 
 ---
 
-#### 8. Alternative Trigger Approach: Copilot SWE Agent + GitHub Actions
+### ✅ 7. Production-Readiness Checklist
 
-An alternative architecture uses GitHub's **Copilot coding agent** (or Claude via GitHub Agentic Workflows, currently in technical preview) as the primary coder, with GitHub Actions handling review and iteration:
+> [!IMPORTANT]
+> Beyond pipeline logic, these elements are required before going to production. Each is independently implementable without changing the core agent flow.
+
+| Area | What to Add | Priority |
+|------|-------------|----------|
+| 📈 **Observability** | Structured JSON logs per agent job → Elastic/Datadog. Track token usage, latency, pass/fail rate per round. | 🔴 High |
+| 💰 **Cost controls** | Hard token budget per run. Abort + notify if exceeded. Use nano models for triage, reserve full models for coding. | 🔴 High |
+| 🔁 **Idempotency** | Check if `agent/issue-{N}` branch exists before creating. Deduplicate Sentry alerts by fingerprint. | 🔴 High |
+| 🔄 **Retry on failure** | `max-retries: 2` per agent job for transient API errors. Commit partial state so retries skip completed work. | 🟡 Medium |
+| 📣 **Human escalation** | If pipeline exits with unresolved HIGH findings, auto-assign PR to lead reviewer + post Slack alert. | 🟡 Medium |
+| 🔔 **Notifications** | Post pipeline start / end / failure to a dedicated Slack or Teams channel with PR link + agent summary. | 🟡 Medium |
+| 🔐 **Secrets management** | LLM API keys in GitHub Secrets (or Azure Key Vault). Rotate `GH_PAT` on a schedule. Never log keys in agent output. | 🔴 High |
+| 🌿 **Branch hygiene** | Auto-delete `agent/issue-{N}` branches when PR is closed without merging. Enforce naming via branch protection. | 🟢 Low |
+| ⏮️ **Rollback** | Tag commit before applying agent changes. Auto-close PR if PHPUnit regression rate exceeds threshold. | 🟡 Medium |
+| ⚡ **Concurrency** | `concurrency: group: issue-${{ github.event.issue.number }}` to prevent two runs for the same issue racing. | 🔴 High |
+| 🛡️ **Scope guardrails** | Triage agent rejects issues touching >N files or requiring schema changes beyond a set complexity. Routes to human planning. | 🟡 Medium |
+
+---
+
+### 🔀 8. Alternative: Copilot SWE Agent + Actions Review Loop
+
+> [!TIP]
+> Instead of building the coder from scratch, delegate coding to GitHub's **Copilot coding agent** and use the Actions pipeline purely as a quality gate. Clean separation of responsibilities.
 
 ```
-Issue assigned to copilot-swe-agent[bot] (via REST API)
-        │
-        ▼
-Copilot opens draft PR with code + unit tests
-        │
-        ▼
-GitHub Actions: PR opened trigger
-  → Review Agent (Mistral / Claude)
-  → Test Runner (PHPUnit)
-  → Security Scanner (Semgrep)
-        │  findings / failures
-        ▼
-Re-assign to copilot-swe-agent[bot] with review comments
-        │
-        ▼
-Copilot pushes fixes → Actions re-run
-        │  (repeat up to 3 times)
-        ▼
-Human review gate
+Issue assigned to copilot-swe-agent[bot] via REST API
+          │
+          ▼
+  Copilot opens Draft PR with code + tests
+          │
+          ▼
+  GitHub Actions: PR opened trigger
+    → 🔎 Review Agent (Claude / Mistral)
+    → 🧪 PHPUnit runner
+    → 🔒 Semgrep scanner
+          │  findings / failures
+          ▼
+  Re-assign to copilot-swe-agent[bot] with comments
+          │
+          ▼
+  Copilot pushes fixes → Actions re-runs
+          │  (repeat up to 3×)
+          ▼
+  👤 Human review gate
 ```
 
-**REST API assignment** (requires `repo` scope PAT and Copilot Enterprise/Business license):
+**REST API assignment:**
 
 ```bash
 gh api repos/{owner}/{repo}/issues/{number}/assignees \
   -X POST \
-  -f assignees[]="copilot-swe-agent[bot]"
-
-# Or with agent_assignment for custom instructions:
-gh api repos/{owner}/{repo}/issues/{number} \
-  -X PATCH \
-  --field 'agent_assignment[target_repo]={owner}/{repo}' \
-  --field 'agent_assignment[base_branch]=main' \
-  --field 'agent_assignment[custom_instructions]=Follow Moodle coding standards...'
+  -f "assignees[]=copilot-swe-agent[bot]"
 ```
 
-This approach delegates the hard coder work to a battle-tested agent and uses the Actions pipeline purely for quality gates — a good split of responsibilities.
+> [!NOTE]
+> Requires **GitHub Copilot Business or Enterprise** license. Claude is assignable from the GitHub UI as an alternative model for the same Copilot agent.
 
 ---
 
-#### Summary: POC → Production Delta
+### 📊 POC → Production: At a Glance
 
-| Capability | POC | Production |
-|------------|-----|-----------|
-| Trigger | GitHub Issue only | Any webhook source via `repository_dispatch` |
-| Planning | None (coder improvises) | Dedicated Planning Agent with full codebase read |
-| Coder scope | PHP only, 4 files max | PHP + JS/TS, unlimited files via `tool_loop` |
-| Tests | Generated but not run | PHPUnit + Behat executed, results fed back |
-| Security | None | Semgrep + CodeQL + Snyk (SARIF inline annotations) |
-| Review rounds | Max 2 | Max 3, with escalation gate |
-| PR type | Regular PR | Draft PR with resolved/unresolved inline threads |
-| Notifications | None | Slack / Teams on start, finish, failure, escalation |
-| Observability | None | Structured logs, token/cost tracking |
-| Concurrency | Conflicts possible | `concurrency:` group per issue number |
-| Retry | None | 2 retries per job on transient API failure |
-| Rollback | None | Auto-close PR if regression threshold exceeded |
+| Capability | 🔬 POC (Today) | 🚀 Production (Target) |
+|------------|---------------|----------------------|
+| **Trigger** | GitHub Issue only | Any webhook via `repository_dispatch` |
+| **Planning** | ❌ Coder improvises | ✅ Dedicated Planning Agent |
+| **Coder scope** | PHP · 4 files max | PHP + JS/TS · unlimited via `tool_loop` |
+| **Test execution** | ❌ Generated, not run | ✅ PHPUnit + Behat executed, results fed back |
+| **Security** | ❌ None | ✅ Semgrep + CodeQL + Snyk (SARIF) |
+| **Review rounds** | Max 2 | Max 3 + escalation gate |
+| **PR type** | Regular PR | Draft PR with resolved/unresolved threads |
+| **Notifications** | ❌ None | ✅ Slack / Teams |
+| **Observability** | ❌ None | ✅ Structured logs + cost tracking |
+| **Concurrency** | ⚠️ Conflicts possible | ✅ Per-issue concurrency group |
+| **Retry** | ❌ None | ✅ 2 retries per job |
+| **Rollback** | ❌ None | ✅ Auto-close on regression |
