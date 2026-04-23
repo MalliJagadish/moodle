@@ -1,0 +1,44 @@
+[
+  {
+    "file": "public/login/forgot_password.php",
+    "line": 42,
+    "severity": "HIGH",
+    "issue": "Incorrect capability check",
+    "suggestion": "Use 'moodle/site:forgot_password' instead of 'moodle/site:sendmessage'"
+  },
+  {
+    "file": "public/login/forgot_password.php",
+    "line": 53,
+    "severity": "MEDIUM",
+    "issue": "Missing error handling for cache initialization failure",
+    "suggestion": "Throw an exception or handle the failure more gracefully"
+  },
+  {
+    "file": "public/login/forgot_password.php",
+    "line": 65,
+    "severity": "MEDIUM",
+    "issue": "Incorrect use of optional_param",
+    "suggestion": "Use required_param for email and username since they are required fields"
+  },
+  {
+    "file": "public/login/forgot_password.php",
+    "line": 78,
+    "severity": "MEDIUM",
+    "issue": "Missing error handling for cache update failure",
+    "suggestion": "Log the error and possibly notify the admin"
+  },
+  {
+    "file": "public/login/forgot_password.php",
+    "line": 82,
+    "severity": "LOW",
+    "issue": "Inconsistent use of single and double quotes",
+    "suggestion": "Use single quotes consistently for strings"
+  },
+  {
+    "file": "public/login/forgot_password.php",
+    "line": 82,
+    "severity": "LOW",
+    "issue": "Missing space after comma in array",
+    "suggestion": "Add a space after each comma for better readability"
+  }
+]
