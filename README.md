@@ -475,9 +475,6 @@ A finding defended across all three rounds is automatically marked `ESCALATED` a
 
 ### 🔀 8. Alternative: Copilot SWE Agent + Actions Review Loop
 
-> [!TIP]
-> Instead of building the coder from scratch, delegate coding to GitHub's **Copilot coding agent** and use the Actions pipeline purely as a quality gate. Clean separation of responsibilities.
-
 ```
 Issue assigned to copilot-swe-agent[bot] via REST API
           │
