@@ -388,26 +388,33 @@ def commit_and_push(message: str):
 
 
 # ── JSON extractor ───────────────────────────────────────────────────────────
-def _fix_json_escapes(s: str) -> str:
-    """Fix invalid JSON escape sequences common in code (PHP, regex, etc.).
+def _fix_json_string(s: str) -> str:
+    """Fix model JSON that was decoded by the HTTP layer, leaving literal
+    control characters (newlines, tabs, etc.) and invalid backslash escapes
+    inside JSON string values.
 
-    JSON only allows: \\", \\\\, \\/, \\b, \\f, \\n, \\r, \\t, \\uXXXX.
-    Model output often has unescaped sequences like \\d, \\s, \\c from PHP/regex code.
-    This converts them to valid double-backslash sequences.
+    Two passes:
+    1. Re-escape literal control characters (newline → \\n, tab → \\t, etc.)
+    2. Fix invalid backslash escapes (\\d, \\s, \\c → \\\\d, \\\\s, \\\\c)
     """
-    return re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', s)
+    # Pass 1: re-escape literal control chars inside the text
+    s = s.replace('\r\n', '\\n').replace('\r', '\\n').replace('\n', '\\n')
+    s = s.replace('\t', '\\t')
+    # Pass 2: fix invalid JSON escape sequences
+    s = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', s)
+    return s
 
 
 def _try_parse_json(s: str):
-    """Try json.loads, then retry with fixed escape sequences."""
+    """Try json.loads, then retry with control-char and escape fixes."""
     try:
         return json.loads(s)
     except json.JSONDecodeError:
         pass
     try:
-        fixed = _fix_json_escapes(s)
+        fixed = _fix_json_string(s)
         result = json.loads(fixed)
-        print("[INFO] parsed JSON after fixing escape sequences")
+        print("[INFO] parsed JSON after fixing string encoding")
         return result
     except json.JSONDecodeError:
         return None
