@@ -388,15 +388,39 @@ def commit_and_push(message: str):
 
 
 # ── JSON extractor ───────────────────────────────────────────────────────────
+def _fix_json_escapes(s: str) -> str:
+    """Fix invalid JSON escape sequences common in code (PHP, regex, etc.).
+
+    JSON only allows: \\", \\\\, \\/, \\b, \\f, \\n, \\r, \\t, \\uXXXX.
+    Model output often has unescaped sequences like \\d, \\s, \\c from PHP/regex code.
+    This converts them to valid double-backslash sequences.
+    """
+    return re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', s)
+
+
+def _try_parse_json(s: str):
+    """Try json.loads, then retry with fixed escape sequences."""
+    try:
+        return json.loads(s)
+    except json.JSONDecodeError:
+        pass
+    try:
+        fixed = _fix_json_escapes(s)
+        result = json.loads(fixed)
+        print("[INFO] parsed JSON after fixing escape sequences")
+        return result
+    except json.JSONDecodeError:
+        return None
+
+
 def extract_json(text: str):
     for pat in (r"```(?:json)?\s*(\[[\s\S]*?\]|\{[\s\S]*?\})\s*```",
                 r"(\[[\s\S]*\])", r"(\{[\s\S]*\})"):
         m = re.search(pat, text)
         if m:
-            try:
-                return json.loads(m.group(1))
-            except json.JSONDecodeError:
-                continue
+            result = _try_parse_json(m.group(1))
+            if result is not None:
+                return result
 
     # Try to repair truncated JSON array (model output cut off mid-content)
     m = re.search(r'(\[\s*\{[\s\S]*)', text)
@@ -408,12 +432,9 @@ def extract_json(text: str):
                 candidate = raw[:end+1]
                 if not candidate.rstrip().endswith(']'):
                     candidate = candidate.rstrip() + ']'
-                try:
-                    result = json.loads(candidate)
-                    if isinstance(result, list) and result:
-                        print("[INFO] repaired truncated JSON array")
-                        return result
-                except json.JSONDecodeError:
-                    continue
+                result = _try_parse_json(candidate)
+                if isinstance(result, list) and result:
+                    print("[INFO] repaired truncated JSON array")
+                    return result
 
     return []
