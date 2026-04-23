@@ -27,34 +27,48 @@ require_once(__DIR__ . '/../../config.php');
 require_once($CFG->dirroot . '/login/forgot_password_form.php');
 require_once($CFG->dirroot . '/user/lib.php');
 
+$context = context_system::instance();
+require_capability('moodle/site:sendmessage', $context);
+
 // Get the user's IP address.
 $ip = \core\session\manager::get_ip_address() ?? 'unknown';
 
-// Define cache for rate limiting.
-$cache = cache::make('core', 'forgotpassword_attempts');
+try {
+    // Define cache for rate limiting.
+    $cache = cache::make('core', 'forgotpassword_attempts');
+} catch (Exception $e) {
+    debugging('Could not initialise cache for forgot password attempts: ' . $e->getMessage(), DEBUG_DEVELOPER);
+    // Proceed without rate limiting if cache fails.
+    $cache = null;
+}
 
 // Rate limit parameters.
 $maxattempts = 3;
 $period = 300; // 5 minutes in seconds.
 
-$attemptsdata = $cache->get($ip);
-if (!$attemptsdata) {
-    $attemptsdata = [];
+$attemptsdata = [];
+if ($cache) {
+    try {
+        $attemptsdata = $cache->get($ip) ?: [];
+    } catch (Exception $e) {
+        debugging('Could not retrieve forgot password attempts from cache: ' . $e->getMessage(), DEBUG_DEVELOPER);
+        // Fallback to empty attempts.
+        $attemptsdata = [];
+    }
 }
 
 // Remove old attempts.
 $now = time();
 foreach ($attemptsdata as $key => $timestamp) {
-    if ($timestamp + $period < $now) {
+    if (($timestamp + $period) < $now) {
         unset($attemptsdata[$key]);
     }
 }
 
 // Check if rate limited.
 if (count($attemptsdata) >= $maxattempts) {
-    // Display throttle warning.
-    $PAGE->set_context(context_system::instance());
-    $PAGE->set_url('/login/forgot_password.php');
+    $PAGE->set_context($context);
+    $PAGE->set_url(new moodle_url('/login/forgot_password.php'));
     $PAGE->set_pagelayout('login');
     echo $OUTPUT->header();
     echo $OUTPUT->notification(get_string('toomanyforgotpasswordattempts', 'core'), 'error');
@@ -62,8 +76,7 @@ if (count($attemptsdata) >= $maxattempts) {
     exit;
 }
 
-// Process the form as before.
-$PAGE->set_context(context_system::instance());
+$PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/login/forgot_password.php'));
 $PAGE->set_pagelayout('login');
 
@@ -72,20 +85,26 @@ $mform = new login_forgot_password_form();
 if ($mform->is_cancelled()) {
     redirect(new moodle_url('/'));
 } else if ($data = $mform->get_data()) {
+    // Validate input properly.
+    $email = isset($data->email) ? optional_param('email', '', PARAM_EMAIL) : '';
+    $username = isset($data->username) ? optional_param('username', '', PARAM_TEXT) : '';
+
     // Add current attempt timestamp.
-    $attemptsdata[] = $now;
-    $cache->set($ip, $attemptsdata);
+    if ($cache) {
+        try {
+            $attemptsdata[] = $now;
+            $cache->set($ip, $attemptsdata);
+        } catch (Exception $e) {
+            debugging('Could not update forgot password attempts cache: ' . $e->getMessage(), DEBUG_DEVELOPER);
+        }
+    }
 
-    // Continue with existing forgot password processing.
-    user_request_password_reset($data);
+    // Call the password reset request with validated data.
+    user_request_password_reset((object)['email' => $email, 'username' => $username]);
 
-    redirect(new moodle_url('/login/reset_password.php', ['email' => $data->email ?? '', 'username' => $data->username ?? '']));
+    redirect(new moodle_url('/login/reset_password.php', ['email' => $email, 'username' => $username]));
 } else {
     echo $OUTPUT->header();
     $mform->display();
     echo $OUTPUT->footer();
 }
-
-// String for the throttle message.
-$stringman = get_string_manager();
-$stringman->add_string('toomanyforgotpasswordattempts', 'core', 'Too many password reset attempts. Please try again in a few minutes.');
