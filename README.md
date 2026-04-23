@@ -457,9 +457,6 @@ A finding defended across all three rounds is automatically marked `ESCALATED` a
 
 ### ✅ 7. Production-Readiness Checklist
 
-> [!IMPORTANT]
-> Beyond pipeline logic, these elements are required before going to production. Each is independently implementable without changing the core agent flow.
-
 | Area | What to Add | Priority |
 |------|-------------|----------|
 | 📈 **Observability** | Structured JSON logs per agent job → Elastic/Datadog. Track token usage, latency, pass/fail rate per round. | 🔴 High |
