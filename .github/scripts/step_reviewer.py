@@ -9,7 +9,11 @@ parser.add_argument("--round", type=int, required=True)
 args = parser.parse_args()
 r = args.round
 
-skills = load_skills()
+code_changes = read_pipeline(f"code-r{r}.json") or []
+
+# Load instructions matching the files being reviewed (Copilot-compatible pattern)
+review_files = [change.get("file", "") for change in code_changes]
+skills = load_skills(review_files)
 
 SYSTEM = f"""You are a senior Moodle code reviewer.
 
@@ -27,7 +31,6 @@ Severity guide:
 If the code is correct and meets all standards return: []
 {skills}"""
 
-code_changes = read_pipeline(f"code-r{r}.json") or []
 user_msg = (
     f"Issue #{ISSUE_NUMBER}: {ISSUE_TITLE}\n\n{ISSUE_BODY}\n\n"
     f"---\nCode changes to review:\n{json.dumps(code_changes, indent=2)}"

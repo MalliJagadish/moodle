@@ -10,7 +10,7 @@ parser.add_argument("--round", type=int, required=True)
 args = parser.parse_args()
 r = args.round
 
-skills = load_skills()
+# skills loaded after file discovery (context-aware)
 
 
 # ── Step 1: Extract keywords from issue ───────────────────────────────────────
@@ -171,6 +171,9 @@ print(f"[Coder round {r}] read {len(file_contents)} files: {list(file_contents.k
 file_context = ""
 for path, content in file_contents.items():
     file_context += f"\n--- {path} ---\n{content}\n"
+
+# Load instructions matching the discovered files (Copilot-compatible pattern)
+skills = load_skills(relevant_files)
 
 # Round 2: include previous code + findings
 prev_findings = read_pipeline(f"findings-r{r-1}.json") if r > 1 else None

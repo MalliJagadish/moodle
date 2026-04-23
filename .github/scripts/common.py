@@ -1,5 +1,5 @@
 """Shared utilities for the agentic pipeline step scripts."""
-import json, os, re, subprocess, sys
+import fnmatch, json, os, re, subprocess, sys
 import requests
 
 ENDPOINT       = "https://models.github.ai/inference/chat/completions"
@@ -15,6 +15,7 @@ CODER_MODEL    = "openai/gpt-4.1-mini"
 REVIEWER_MODEL = "mistral-ai/mistral-small-2503"
 PIPELINE_DIR   = ".pipeline"
 SKILLS_DIR     = ".github/ai-skills"
+INSTRUCTIONS_DIR = ".github/instructions"
 
 _API_HEADERS = {
     "Authorization": f"Bearer {GITHUB_TOKEN}",
@@ -22,18 +23,83 @@ _API_HEADERS = {
     "X-GitHub-Api-Version": "2022-11-28",
 }
 
-# ── Skills loader ─────────────────────────────────────────────────────────────
-def load_skills() -> str:
-    if not os.path.isdir(SKILLS_DIR):
+# ── Instructions loader (Copilot-compatible pattern) ─────────────────────────
+def _parse_instruction(path: str) -> dict:
+    """Parse a .instructions.md file with applyTo glob in frontmatter."""
+    content = open(path, encoding="utf-8", errors="replace").read().strip()
+    if not content:
+        return {}
+    globs = []
+    body = content
+    fm_match = re.match(r'^---\s*\n(.*?)\n---\s*\n(.*)', content, re.DOTALL)
+    if fm_match:
+        body = fm_match.group(2).strip()
+        for line in fm_match.group(1).split('\n'):
+            if ':' in line:
+                key, val = line.split(':', 1)
+                if key.strip().lower() == 'applyto':
+                    globs = [g.strip() for g in val.strip().strip('"\'').split(',') if g.strip()]
+    return {"body": body, "globs": globs, "path": path}
+
+
+def _file_matches_glob(filepath: str, patterns: list[str]) -> bool:
+    """Check if a file path matches any of the glob patterns."""
+    normalized = filepath.replace('\\', '/').lstrip('./')
+    for pattern in patterns:
+        if fnmatch.fnmatch(normalized, pattern):
+            return True
+        if '/' not in pattern and fnmatch.fnmatch(os.path.basename(normalized), pattern):
+            return True
+    return False
+
+
+def load_skills(file_paths: list[str] | None = None) -> str:
+    """Load instructions that match the given file paths (Copilot-compatible).
+
+    Reads .instructions.md files from .github/instructions/.
+    Each file has an applyTo frontmatter with glob patterns.
+    Only loads instructions whose globs match at least one of the file_paths.
+    Files without globs are always loaded (global instructions).
+    Falls back to .github/ai-skills/ if instructions dir doesn't exist.
+    """
+    # Primary: .github/instructions/ (Copilot-compatible)
+    instructions_dir = INSTRUCTIONS_DIR if os.path.isdir(INSTRUCTIONS_DIR) else None
+    # Fallback: .github/ai-skills/
+    skills_dir = SKILLS_DIR if not instructions_dir and os.path.isdir(SKILLS_DIR) else None
+
+    if not instructions_dir and not skills_dir:
         return ""
-    parts = []
-    for fname in sorted(os.listdir(SKILLS_DIR)):
-        if fname.endswith((".md", ".txt")):
-            path = os.path.join(SKILLS_DIR, fname)
-            content = open(path, encoding="utf-8", errors="replace").read().strip()
-            if content:
-                parts.append(f"### {fname}\n{content}")
-    return ("\n\n---\n## Team standards & skills\n\n" + "\n\n".join(parts)) if parts else ""
+
+    scan_dir = instructions_dir or skills_dir
+    all_instructions = []
+    for root, _, files in os.walk(scan_dir):
+        for fname in sorted(files):
+            if fname.endswith((".md", ".txt")) and fname.lower() != "readme.md":
+                inst = _parse_instruction(os.path.join(root, fname))
+                if inst.get("body"):
+                    inst["name"] = fname
+                    all_instructions.append(inst)
+
+    if not all_instructions:
+        return ""
+
+    # Match instructions to file paths
+    if file_paths:
+        selected = []
+        for inst in all_instructions:
+            if not inst["globs"]:
+                selected.append(inst)  # no globs = global, always load
+            elif any(_file_matches_glob(fp, inst["globs"]) for fp in file_paths):
+                selected.append(inst)
+        if not selected:
+            selected = all_instructions  # fallback: load all
+    else:
+        selected = all_instructions
+
+    parts = [f"### {s['name']}\n{s['body']}" for s in selected]
+    loaded_names = [s['name'] for s in selected]
+    print(f"[Instructions] loaded {len(selected)}/{len(all_instructions)}: {loaded_names}")
+    return ("\n\n---\n## Team standards & instructions\n\n" + "\n\n".join(parts)) if parts else ""
 
 
 # ── File reading tools ────────────────────────────────────────────────────────
@@ -67,7 +133,7 @@ def tool_search_files(query: str, extension: str = ".php") -> str:
     return result.stdout.strip() or "No matches found"
 
 def tool_find_file(name: str) -> str:
-    """Find files by name pattern (e.g. 'token_form.php')."""
+    """Find files by name pattern."""
     result = subprocess.run(
         f'find . -type f -name "*{name}*" 2>/dev/null | grep -v ".git" | head -15',
         shell=True, capture_output=True, text=True,
@@ -115,7 +181,7 @@ CODER_TOOLS = [
         "parameters": {
             "type": "object",
             "properties": {
-                "name": {"type": "string", "description": "File name or partial name, e.g. 'token_form.php'"}
+                "name": {"type": "string", "description": "File name or partial name to search for"}
             },
             "required": ["name"]
         },
