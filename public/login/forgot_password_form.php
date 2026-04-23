@@ -84,6 +84,7 @@ class login_forgot_password_form extends moodleform {
      * @return array errors occuring during validation.
      */
     function validation($data, $files) {
+        global $CFG, $DB, $USER;
 
         $errors = parent::validation($data, $files);
 
@@ -103,6 +104,86 @@ class login_forgot_password_form extends moodleform {
         $errors = array_merge($errors, core_login_validate_extend_forgot_password_form($data));
 
         $errors += core_login_validate_forgot_password_data($data);
+
+        if (!empty($errors)) {
+            return $errors;
+        }
+
+        // Implement rate limiting to prevent brute force attacks.
+
+        $cache = cache::make('core', 'forgotpassword_rate_limit');
+
+        $ip = 	ool_mfa	ools::get_client_ip() ?: 'unknown';
+
+        // Normalize email and username to lowercase for consistent rate limiting.
+        $useridentifier = '';
+        if (!empty($data['email'])) {
+            $useridentifier = strtolower(trim($data['email']));
+        } elseif (!empty($data['username'])) {
+            $useridentifier = strtolower(trim($data['username']));
+        }
+
+        $now = time();
+
+        // Rate limits configuration.
+        $maxip = 5; // Max 5 requests.
+        $iperiod = 900; // 15 minutes.
+        $maxuser = 3; // Max 3 requests.
+        $userperiod = 3600; // 1 hour.
+
+        // Key per IP address.
+        $ipkey = 'ip_' . md5($ip);
+        // Key per user identifier.
+        $userkey = 'user_' . md5($useridentifier);
+
+        $ipdata = $cache->get($ipkey);
+        $userdata = $cache->get($userkey);
+
+        // Clean up old attempts and count recent.
+        $ipattempts = [];
+        if (is_array($ipdata)) {
+            foreach ($ipdata as $timestamp) {
+                if ($timestamp > $now - $iperiod) {
+                    $ipattempts[] = $timestamp;
+                }
+            }
+        }
+
+        $userattempts = [];
+        if (is_array($userdata)) {
+            foreach ($userdata as $timestamp) {
+                if ($timestamp > $now - $userperiod) {
+                    $userattempts[] = $timestamp;
+                }
+            }
+        }
+
+        // Check if rate limits exceeded.
+        $ipblocked = count($ipattempts) >= $maxip;
+        $userblocked = !empty($useridentifier) && (count($userattempts) >= $maxuser);
+
+        if ($ipblocked || $userblocked) {
+            // Log the blocked attempt.
+            $eventdata = [
+                'ip' => $ip,
+                'useridentifier' => $useridentifier,
+                'time' => $now,
+            ];
+            debugging('Forgot password rate limit exceeded for IP ' . $ip . ' and user ' . $useridentifier, DEBUG_NORMAL);
+
+            // Throw a generic error.
+            $errors['username'] = get_string('forgotpasswordratelimitexceeded', 'auth');
+            return $errors;
+        }
+
+        // Add current attempt.
+        $ipattempts[] = $now;
+        $cache->set($ipkey, $ipattempts);
+
+        if (!empty($useridentifier)) {
+            $userattempts[] = $now;
+            $cache->set($userkey, $userattempts);
+        }
 
         return $errors;
     }
