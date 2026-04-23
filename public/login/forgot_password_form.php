@@ -50,17 +50,21 @@ class login_forgot_password_form extends moodleform {
         // Hook for plugins to extend form definition.
         core_login_extend_forgot_password_form($mform);
 
-        $mform->addElement('header', 'searchbyusername', get_string('searchbyusername'), '');
+        $mform->addElement('header', 'searchbyusername', get_string('searchbyusername', 'auth'), '');
 
         $purpose = user_edit_map_field_purpose($USER->id, 'username');
-        $mform->addElement('text', 'username', get_string('username'), 'size="20"' . $purpose);
-        $mform->setType('username', PARAM_RAW);
+        $mform->addElement('text', 'username', get_string('username', 'auth'), 'size="20"' . $purpose);
+        $mform->setType('username', PARAM_TEXT);
 
-        $mform->addElement('header', 'searchbyemail', get_string('searchbyemail'), '');
+        $mform->addRule('username', get_string('required'), 'required');
+
+        $mform->addElement('header', 'searchbyemail', get_string('searchbyemail', 'auth'), '');
 
         $purpose = user_edit_map_field_purpose($USER->id, 'email');
-        $mform->addElement('text', 'email', get_string('email'), 'maxlength="100" size="30"' . $purpose);
-        $mform->setType('email', PARAM_RAW_TRIMMED);
+        $mform->addElement('text', 'email', get_string('email', 'auth'), 'maxlength="100" size="30"' . $purpose);
+        $mform->setType('email', PARAM_EMAIL);
+
+        $mform->addRule('email', get_string('required'), 'required');
 
         // Avoid the user to fill both fields.
         $mform->disabledIf('email', 'username', 'neq', '');
@@ -73,8 +77,7 @@ class login_forgot_password_form extends moodleform {
             $mform->addElement('recaptcha', 'recaptcha_element', '');
         }
 
-        $submitlabel = get_string('search');
-        $mform->addElement('submit', 'submit', $submitlabel);
+        $mform->addElement('submit', 'submit', get_string('search'));
     }
 
     /**
@@ -96,7 +99,7 @@ class login_forgot_password_form extends moodleform {
                     $errors['recaptcha_element'] = get_string('incorrectpleasetryagain', 'auth');
                 }
             } else {
-                $errors['recaptcha_element'] = get_string('missingrecaptchachallengefield');
+                $errors['recaptcha_element'] = get_string('missingrecaptchachallengefield', 'auth');
             }
         }
 
@@ -113,7 +116,7 @@ class login_forgot_password_form extends moodleform {
 
         $cache = cache::make('core', 'forgotpassword_rate_limit');
 
-        $ip = 	ool_mfa	ools::get_client_ip() ?: 'unknown';
+        $ip = 	ool_mfa\tools::get_client_ip() ?: 'unknown';
 
         // Normalize email and username to lowercase for consistent rate limiting.
         $useridentifier = '';
