@@ -1,0 +1,37 @@
+[
+  {
+    "file": "public/login/forgot_password.php",
+    "line": 42,
+    "severity": "HIGH",
+    "issue": "Missing capability check",
+    "suggestion": "Add require_capability('moodle/site:sendmessage', $context) before processing the reset request."
+  },
+  {
+    "file": "public/login/forgot_password.php",
+    "line": 42,
+    "severity": "HIGH",
+    "issue": "Missing input validation",
+    "suggestion": "Use required_param() / optional_param() with appropriate PARAM_ type to validate input."
+  },
+  {
+    "file": "public/login/forgot_password.php",
+    "line": 42,
+    "severity": "MEDIUM",
+    "issue": "Direct echo usage in lib file",
+    "suggestion": "Use $OUTPUT->render() or return HTML instead of direct echo."
+  },
+  {
+    "file": "public/login/forgot_password.php",
+    "line": 42,
+    "severity": "MEDIUM",
+    "issue": "Missing error handling for cache operations",
+    "suggestion": "Add error handling for cache get and set operations."
+  },
+  {
+    "file": "public/login/forgot_password.php",
+    "line": 42,
+    "severity": "LOW",
+    "issue": "String addition at the end of the file",
+    "suggestion": "Move the string addition to the appropriate language file."
+  }
+]
