@@ -28,6 +28,9 @@ require_once($CFG->libdir.'/formslib.php');
 require_once($CFG->dirroot.'/user/lib.php');
 require_once('lib.php');
 
+use core
+otification;
+
 /**
  * Reset forgotten password form definition.
  *
@@ -84,7 +87,7 @@ class login_forgot_password_form extends moodleform {
      * @return array errors occuring during validation.
      */
     function validation($data, $files) {
-
+        global $DB, $USER, $CFG;
         $errors = parent::validation($data, $files);
 
         if (forgotpassword_captcha_enabled()) {
@@ -99,6 +102,54 @@ class login_forgot_password_form extends moodleform {
             }
         }
 
+        // Implement rate limiting checks
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+
+        // Clean and normalize email/username
+        $inputuser = trim($data['username'] ?? '');
+        $inputemail = trim($data['email'] ?? '');
+
+        $keyemail = '';
+        if (!empty($inputuser)) {
+            $keyemail = strtolower($inputuser);
+        } else if (!empty($inputemail)) {
+            $keyemail = strtolower($inputemail);
+        }
+
+        $cache = cache::make('core', 'forgotpassword_rate_limit');
+
+        // IP rate limit: max 5 attempts per 15 minutes
+        $ipkey = 'ip_' . $ip;
+        $ipdata = $cache->get($ipkey);
+        if (!$ipdata) {
+            $ipdata = ['count' => 0, 'starttime' => time()];
+        }
+        // Reset count if window expired
+        if (time() - $ipdata['starttime'] > 15 * 60) {
+            $ipdata = ['count' => 0, 'starttime' => time()];
+        }
+        if ($ipdata['count'] >= 5) {
+            $errors['username'] = get_string('resetpasswordratelimitexceeded', 'auth');
+            debugging('Forgot password rate limit reached for IP ' . $ip, DEBUG_NORMAL);
+        }
+
+        // User/email rate limit: max 3 attempts per hour
+        if ($keyemail !== '') {
+            $userkey = 'user_' . md5($keyemail);
+            $userdata = $cache->get($userkey);
+            if (!$userdata) {
+                $userdata = ['count' => 0, 'starttime' => time()];
+            }
+            // Reset count if window expired
+            if (time() - $userdata['starttime'] > 60 * 60) {
+                $userdata = ['count' => 0, 'starttime' => time()];
+            }
+            if ($userdata['count'] >= 3) {
+                $errors['username'] = get_string('resetpasswordratelimitexceeded', 'auth');
+                debugging('Forgot password rate limit reached for user/email ' . $keyemail, DEBUG_NORMAL);
+            }
+        }
+
         // Extend validation for any form extensions from plugins.
         $errors = array_merge($errors, core_login_validate_extend_forgot_password_form($data));
 
@@ -107,4 +158,53 @@ class login_forgot_password_form extends moodleform {
         return $errors;
     }
 
+    /**
+     * Override submit behaviour to increment rate limits.
+     *
+     * @param array $data Submitted form data.
+     * @return void
+     */
+    protected function process_data($data) {
+        global $CFG;
+
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+
+        $inputuser = trim($data['username'] ?? '');
+        $inputemail = trim($data['email'] ?? '');
+
+        $keyemail = '';
+        if (!empty($inputuser)) {
+            $keyemail = strtolower($inputuser);
+        } else if (!empty($inputemail)) {
+            $keyemail = strtolower($inputemail);
+        }
+
+        $cache = cache::make('core', 'forgotpassword_rate_limit');
+
+        // Update IP data
+        $ipkey = 'ip_' . $ip;
+        $ipdata = $cache->get($ipkey);
+        if (!$ipdata) {
+            $ipdata = ['count' => 0, 'starttime' => time()];
+        }
+        if (time() - $ipdata['starttime'] > 15 * 60) {
+            $ipdata = ['count' => 0, 'starttime' => time()];
+        }
+        $ipdata['count']++;
+        $cache->set($ipkey, $ipdata);
+
+        // Update user/email data
+        if ($keyemail !== '') {
+            $userkey = 'user_' . md5($keyemail);
+            $userdata = $cache->get($userkey);
+            if (!$userdata) {
+                $userdata = ['count' => 0, 'starttime' => time()];
+            }
+            if (time() - $userdata['starttime'] > 60 * 60) {
+                $userdata = ['count' => 0, 'starttime' => time()];
+            }
+            $userdata['count']++;
+            $cache->set($userkey, $userdata);
+        }
+    }
 }
