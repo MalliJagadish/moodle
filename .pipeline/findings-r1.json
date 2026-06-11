@@ -1,0 +1,23 @@
+[
+  {
+    "file": "user/preferences.php",
+    "line": 35,
+    "severity": "HIGH",
+    "issue": "Direct echo of string",
+    "suggestion": "Use $OUTPUT->render() or return HTML"
+  },
+  {
+    "file": "user/preferences.php",
+    "line": 26,
+    "severity": "MEDIUM",
+    "issue": "Use of PARAM_RAW for value parameter",
+    "suggestion": "Use PARAM_TEXT or appropriate PARAM_ type for value parameter"
+  },
+  {
+    "file": "user/preferences.php",
+    "line": 25,
+    "severity": "LOW",
+    "issue": "Missing validation for preference parameter",
+    "suggestion": "Add validation for preference parameter to ensure it meets expected format"
+  }
+]

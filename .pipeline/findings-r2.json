@@ -1,0 +1,9 @@
+[
+  {
+    "file": "user/preferences.php",
+    "line": 30,
+    "severity": "HIGH",
+    "issue": "Direct use of `echo` in a library file",
+    "suggestion": "Use `$OUTPUT->render()` or return HTML instead of `echo`"
+  }
+]
